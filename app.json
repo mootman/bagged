@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Bagged",
+    "name": "Register",
     "slug": "bagged",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bagged",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.mootman.bagged",
@@ -41,7 +41,7 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Bagged looks at where your photos were taken to find summits you have climbed. Photos never leave your phone.",
+          "photosPermission": "Register looks at where your photos were taken to find summits you have climbed. Photos never leave your phone.",
           "savePhotosPermission": false,
           "isAccessMediaLocationEnabled": true,
           "granularPermissions": [

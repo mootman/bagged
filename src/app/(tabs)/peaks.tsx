@@ -1,78 +1,71 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { Screen } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { PeakPoster } from '@/components/peak-poster';
+import { Chip, Display, Screen } from '@/components/ui';
+import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useStore } from '@/lib/store';
 
-export default function PeaksScreen() {
-  const t = useTheme();
-  const { peaks, summitedIds } = useStore();
-  const [q, setQ] = useState('');
-  const [sort, setSort] = useState<'elevation' | 'range'>('elevation');
+const c = Colors.dark;
+type Filter = 'all' | 'climbed' | 'todo';
 
+/** Letterboxd's core surface: a grid of posters. Here, every 14er, with your gaps showing. */
+export default function PeaksScreen() {
+  const { width } = useWindowDimensions();
+  const { peaks, summitedIds, photoFor } = useStore();
+  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
+
+  const contentW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
+  const cols = contentW > 500 ? 5 : 3;
+  const gap = Spacing.two;
+  const posterW = (contentW - gap * (cols - 1)) / cols;
+
+  const climbed = peaks.filter((p) => summitedIds.has(p.id)).length;
   const shown = peaks
+    .filter((p) => (filter === 'climbed' ? summitedIds.has(p.id) : filter === 'todo' ? !summitedIds.has(p.id) : true))
     .filter((p) => !q || `${p.name} ${p.range}`.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) =>
-      sort === 'elevation' ? b.elevationFt - a.elevationFt : a.range.localeCompare(b.range) || b.elevationFt - a.elevationFt,
-    );
+    .sort((a, b) => b.elevationFt - a.elevationFt);
 
   return (
     <Screen tabs>
-      <ThemedText type="subtitle">Colorado 14ers</ThemedText>
+      <View style={{ gap: 2 }}>
+        <Display size={30}>Colorado 14ers</Display>
+        <Text style={{ color: c.textSecondary, fontSize: 15 }}>
+          <Text style={{ color: c.accent, fontWeight: '800' }}>{climbed}</Text> of {peaks.length} signed
+        </Text>
+      </View>
       <TextInput
         value={q}
         onChangeText={setQ}
         placeholder="Search peaks or ranges"
-        placeholderTextColor={t.textSecondary}
-        style={[styles.search, { color: t.text, backgroundColor: t.backgroundElement }]}
+        placeholderTextColor={c.textMuted}
+        style={styles.search}
       />
-      <View style={styles.sortRow}>
-        {(['elevation', 'range'] as const).map((s) => (
-          <Pressable key={s} onPress={() => setSort(s)} style={[styles.chip, { backgroundColor: sort === s ? t.text : t.backgroundElement }]}>
-            <ThemedText type="small" style={{ color: sort === s ? t.background : t.text }}>
-              By {s}
-            </ThemedText>
+      <View style={styles.chips}>
+        <Chip label="All" active={filter === 'all'} onPress={() => setFilter('all')} />
+        <Chip label={`Climbed ${climbed}`} active={filter === 'climbed'} onPress={() => setFilter('climbed')} />
+        <Chip label={`To go ${peaks.length - climbed}`} active={filter === 'todo'} onPress={() => setFilter('todo')} />
+      </View>
+      <View style={[styles.grid, { gap }]}>
+        {shown.map((p) => (
+          <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <PeakPoster peak={p} width={posterW} climbed={summitedIds.has(p.id)} photoId={photoFor.get(p.id)} />
           </Pressable>
         ))}
       </View>
-      <View>
-        {shown.map((p) => {
-          const done = summitedIds.has(p.id);
-          return (
-            <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)} style={[styles.row, { borderBottomColor: t.border }]}>
-              <View style={[styles.dot, { backgroundColor: done ? t.accent : 'transparent', borderColor: done ? t.accent : t.unclimbed }]} />
-              <View style={{ flex: 1 }}>
-                <ThemedText type="smallBold">{p.name}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {p.range}
-                  {p.ranked ? '' : ' · unranked'}
-                </ThemedText>
-              </View>
-              <ThemedText type="small" themeColor="textSecondary">
-                {p.elevationFt.toLocaleString()}&apos;
-              </ThemedText>
-            </Pressable>
-          );
-        })}
-      </View>
+      {shown.length === 0 && (
+        <Text style={{ color: c.textSecondary, textAlign: 'center', marginTop: Spacing.four }}>
+          {filter === 'climbed' ? 'Nothing signed yet. Your first one is out there.' : 'No peaks match that.'}
+        </Text>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  search: { borderRadius: Radius.sm, padding: Spacing.three, fontSize: 16 },
-  sortRow: { flexDirection: 'row', gap: Spacing.two },
-  chip: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one + 2, borderRadius: 99 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.three,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  search: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: Radius.md, padding: 14, fontSize: 16 },
+  chips: { flexDirection: 'row', gap: Spacing.two },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

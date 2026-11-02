@@ -52,6 +52,8 @@ export type SummitLog = {
   createdAt: number;
   /** Who tagged you, for logs that came from a claim link. */
   taggedBy?: string;
+  /** Camera-roll asset id of a summit photo, used as the poster. */
+  photoId?: string;
 };
 
 export type Profile = {

@@ -1,21 +1,74 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { tap } from '@/lib/haptics';
 
-export function Screen({ children, tabs = false }: { children: ReactNode; tabs?: boolean }) {
-  const t = useTheme();
+const c = Colors.dark;
+
+export function Screen({
+  children,
+  tabs = false,
+  padded = true,
+  header,
+}: {
+  children: ReactNode;
+  tabs?: boolean;
+  padded?: boolean;
+  /** Full-bleed content above the padded column, e.g. a backdrop. */
+  header?: ReactNode;
+}) {
   return (
-    <SafeAreaView edges={tabs ? ['top'] : []} style={{ flex: 1, backgroundColor: t.background }}>
+    <SafeAreaView edges={tabs ? ['top'] : []} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: tabs ? BottomTabInset + Spacing.five : Spacing.five }]}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: tabs ? BottomTabInset + Spacing.five : Spacing.five }}
         keyboardShouldPersistTaps="handled">
-        <View style={styles.inner}>{children}</View>
+        {header}
+        <View style={[styles.inner, padded && { paddingHorizontal: Spacing.three, paddingTop: Spacing.three }]}>{children}</View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Display type: tight, heavy headings like Letterboxd film titles. */
+export function Display({ children, size = 34, style }: { children: ReactNode; size?: number; style?: StyleProp<TextStyle> }) {
+  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.08, fontWeight: '800', letterSpacing: -0.6 }, style]}>{children}</Text>;
+}
+
+export function Body({ children, muted, style, numberOfLines }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number }) {
+  return (
+    <Text numberOfLines={numberOfLines} style={[{ color: muted ? c.textSecondary : c.text, fontSize: 15, lineHeight: 21 }, style]}>
+      {children}
+    </Text>
+  );
+}
+
+/** Small uppercase tracked label for section heads. */
+export function Label({ children, style, color }: { children: ReactNode; style?: StyleProp<TextStyle>; color?: string }) {
+  return <Text style={[styles.label, color ? { color } : null, style]}>{children}</Text>;
+}
+
+export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Label>{title}</Label>
+      {action && (
+        <Pressable onPress={onAction} hitSlop={10}>
+          <Text style={{ color: c.link, fontSize: 13, fontWeight: '600' }}>{action}</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -32,68 +85,77 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'ghost';
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
-  const t = useTheme();
-  const bg = variant === 'primary' ? t.accent : variant === 'secondary' ? t.backgroundElement : 'transparent';
-  const fg = variant === 'primary' ? t.accentText : t.text;
+  const bg = variant === 'primary' ? c.accent : variant === 'secondary' ? c.backgroundSelected : 'transparent';
+  const fg = variant === 'primary' ? c.accentText : variant === 'ghost' ? c.textSecondary : c.text;
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => {
+        tap();
+        onPress();
+      }}
       disabled={disabled || loading}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.75 : 1 },
-        variant === 'ghost' && { paddingHorizontal: 0 },
+        { backgroundColor: bg, opacity: disabled ? 0.35 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         style,
       ]}>
-      {loading ? (
-        <ActivityIndicator color={fg} />
-      ) : (
-        <ThemedText type="smallBold" style={{ color: fg, fontSize: 16 }}>
-          {title}
-        </ThemedText>
-      )}
+      {loading ? <ActivityIndicator color={fg} /> : <Text style={{ color: fg, fontSize: 16, fontWeight: '700' }}>{title}</Text>}
     </Pressable>
   );
 }
 
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  const t = useTheme();
-  return <View style={[styles.card, { backgroundColor: t.backgroundElement }, style]}>{children}</View>;
+  return <View style={[styles.card, style]}>{children}</View>;
 }
 
-export function SectionTitle({ children }: { children: ReactNode }) {
+export function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress: () => void }) {
   return (
-    <ThemedText type="smallBold" themeColor="textSecondary" style={styles.section}>
-      {children}
-    </ThemedText>
+    <Pressable
+      onPress={() => {
+        tap();
+        onPress();
+      }}
+      style={[styles.chip, { backgroundColor: active ? c.text : c.backgroundElement }]}>
+      <Text style={{ color: active ? c.background : c.textSecondary, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+    </Pressable>
   );
 }
 
-export function ProgressBar({ value, total }: { value: number; total: number }) {
-  const t = useTheme();
+/** Big-number stats row, the "Wrapped" look: the number is the hero, the label is quiet. */
+export function Stats({ items }: { items: { value: string; label: string; color?: string }[] }) {
+  return (
+    <View style={styles.stats}>
+      {items.map((it, i) => (
+        <View key={it.label} style={[styles.stat, i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: c.border }]}>
+          <Text style={[styles.statValue, it.color ? { color: it.color } : null]}>{it.value}</Text>
+          <Text style={styles.statLabel}>{it.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export function ProgressBar({ value, total, color = c.accent, height = 8 }: { value: number; total: number; color?: string; height?: number }) {
   const pct = total ? Math.min(1, value / total) : 0;
   return (
-    <View style={[styles.track, { backgroundColor: t.backgroundSelected }]}>
-      <View style={[styles.fill, { width: `${pct * 100}%`, backgroundColor: t.accent }]} />
+    <View style={{ height, borderRadius: height / 2, backgroundColor: c.backgroundSelected, overflow: 'hidden' }}>
+      <View style={{ width: `${pct * 100}%`, height: '100%', borderRadius: height / 2, backgroundColor: color }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flexGrow: 1, paddingHorizontal: Spacing.three, paddingTop: Spacing.three },
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
-  button: {
-    minHeight: 50,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: { borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two },
-  section: { textTransform: 'uppercase', letterSpacing: 1, marginTop: Spacing.two },
-  track: { height: 10, borderRadius: 5, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 5 },
+  label: { color: c.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.three },
+  button: { minHeight: 52, borderRadius: Radius.md, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 99 },
+  stats: { flexDirection: 'row', paddingVertical: Spacing.two },
+  stat: { flex: 1, alignItems: 'center', gap: 2 },
+  statValue: { color: c.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  statLabel: { color: c.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' },
 });

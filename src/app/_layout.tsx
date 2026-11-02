@@ -1,7 +1,7 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
@@ -18,9 +18,9 @@ function HideSplashWhenReady() {
 }
 
 export default function RootLayout() {
-  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const c = Colors[scheme];
-  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  // Dark-only by design: artwork and photos read best on a dark canvas.
+  const c = Colors.dark;
+  const base = DarkTheme;
   const theme = {
     ...base,
     colors: { ...base.colors, primary: c.accent, background: c.background, card: c.background, text: c.text, border: c.border },
@@ -31,11 +31,12 @@ export default function RootLayout() {
       <ThemeProvider value={theme}>
         <StoreProvider>
           <HideSplashWhenReady />
-          <Stack screenOptions={{ headerShadowVisible: false, headerBackTitle: 'Back' }}>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShadowVisible: false, headerBackTitle: 'Back', headerTintColor: c.text, headerStyle: { backgroundColor: c.background }, contentStyle: { backgroundColor: c.background } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="peak/[id]" options={{ title: '' }} />
-            <Stack.Screen name="log/new" options={{ title: 'Log a summit', presentation: 'modal' }} />
-            <Stack.Screen name="log/[id]" options={{ title: 'Summit' }} />
+            <Stack.Screen name="log/new" options={{ title: 'Sign the register', presentation: 'modal' }} />
+            <Stack.Screen name="log/[id]" options={{ title: '' }} />
             <Stack.Screen name="share/[id]" options={{ title: 'Summit card', presentation: 'modal' }} />
             <Stack.Screen name="claim/[token]" options={{ title: 'Claim your summit' }} />
           </Stack>

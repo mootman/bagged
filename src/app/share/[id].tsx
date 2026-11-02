@@ -5,8 +5,8 @@ import { Alert, Platform, useWindowDimensions, View, type HostInstance } from 'r
 import { captureRef } from 'react-native-view-shot';
 
 import { SummitCard } from '@/components/summit-card';
-import { ThemedText } from '@/components/themed-text';
-import { Button, Screen } from '@/components/ui';
+import { Body, Button, Screen } from '@/components/ui';
+import { success } from '@/lib/haptics';
 import { useStore } from '@/lib/store';
 
 export default function ShareScreen() {
@@ -18,10 +18,10 @@ export default function ShareScreen() {
 
   const log = logs.find((l) => l.id === id);
   const peak = log && peakById.get(log.peakId);
-  if (!log || !peak) return <Screen><ThemedText>Summit not found.</ThemedText></Screen>;
+  if (!log || !peak) return <Screen><Body>Summit not found.</Body></Screen>;
 
-  // Fit the 9:16 card on screen with room for the button.
-  const cardWidth = Math.min(width - 32, ((height - 220) * 9) / 16, 400);
+  const cardWidth = Math.min(width - 32, ((height - 230) * 9) / 16, 400);
+  const listCount = peaks.filter((p) => summitedIds.has(p.id)).length;
 
   async function share() {
     if (Platform.OS === 'web') {
@@ -31,6 +31,7 @@ export default function ShareScreen() {
     setBusy(true);
     try {
       const uri = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile', width: 1080, height: 1920 });
+      success();
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: `${peak?.name} summit card` });
     } catch (e) {
       Alert.alert('Could not share', String(e));
@@ -42,9 +43,9 @@ export default function ShareScreen() {
   return (
     <Screen>
       <View style={{ alignItems: 'center' }}>
-        <SummitCard ref={ref} peak={peak} log={log} allPeaks={peaks} summited={summitedIds} name={profile.name} width={cardWidth} />
+        <SummitCard ref={ref} peak={peak} log={log} listCount={listCount} listTotal={peaks.length} name={profile.name} width={cardWidth} />
       </View>
-      <Button title="Share to Instagram, Messages..." loading={busy} onPress={share} />
+      <Button title="Share to your story" loading={busy} onPress={share} />
     </Screen>
   );
 }

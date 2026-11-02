@@ -2,35 +2,34 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-/** Alpine palette: granite neutrals with an alpenglow accent for summits you've bagged. */
-export const Colors = {
-  light: {
-    text: '#1B1F1D',
-    background: '#F6F4EF',
-    backgroundElement: '#ECE8DF',
-    backgroundSelected: '#DED8CB',
-    textSecondary: '#6B6F69',
-    border: '#D8D2C4',
-    accent: '#D9572B',
-    accentText: '#FFFFFF',
-    unclimbed: '#B9B4A8',
-    success: '#2F7D4F',
-  },
-  dark: {
-    text: '#F2EFE8',
-    background: '#121513',
-    backgroundElement: '#1D211E',
-    backgroundSelected: '#2A2F2B',
-    textSecondary: '#A3A79F',
-    border: '#2E332F',
-    accent: '#F06A3B',
-    accentText: '#FFFFFF',
-    unclimbed: '#4A4F4A',
-    success: '#4FB07A',
-  },
+/**
+ * Dark-first, like Letterboxd: tinted slate neutrals (never pure black or white) so the
+ * artwork and photos are the brightest thing on screen.
+ *
+ * Color has one job each:
+ *   accent (alpenglow)  = action and summits you've earned
+ *   link (glacier)      = links and secondary actions
+ *   gold                = list completion and milestones
+ */
+const palette = {
+  text: '#DCE3E8',
+  background: '#12161A',
+  backgroundElement: '#1B2127',
+  backgroundSelected: '#252D34',
+  textSecondary: '#93A1AC',
+  textMuted: '#5E6B75',
+  border: '#2B343C',
+  accent: '#FF6B3D',
+  accentText: '#FFFFFF',
+  link: '#6CC4F0',
+  gold: '#F2C14E',
+  unclimbed: '#3A444D',
+  success: '#4FB07A',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const Colors = { light: palette, dark: palette } as const;
+
+export type ThemeColor = keyof typeof palette;
 
 export const Fonts = Platform.select({
   ios: { sans: 'system-ui', serif: 'ui-serif', rounded: 'ui-rounded', mono: 'ui-monospace' },
@@ -53,7 +52,7 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const Radius = { sm: 8, md: 14, lg: 22 } as const;
+export const Radius = { xs: 4, sm: 8, md: 14, lg: 22 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 640;

@@ -3,18 +3,17 @@ import { useState } from 'react';
 import { Alert, StyleSheet, TextInput } from 'react-native';
 
 import { PartnerEditor } from '@/components/partner-editor';
-import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Screen, SectionTitle } from '@/components/ui';
-import { Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Body, Button, Card, Display, Label, Screen } from '@/components/ui';
+import { Radius, Spacing , Colors } from '@/constants/theme';
 import { localDay } from '@/lib/detect';
+import { success } from '@/lib/haptics';
 import { useStore } from '@/lib/store';
 import { withClaimLinks } from '@/lib/tagging';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function NewLogScreen() {
-  const t = useTheme();
+  const t = Colors.dark;
   const { peakId } = useLocalSearchParams<{ peakId: string }>();
   const { peakById, profile, addLogs, logs } = useStore();
   const peak = peakById.get(peakId);
@@ -23,7 +22,7 @@ export default function NewLogScreen() {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  if (!peak) return <Screen><ThemedText>Pick a peak from the Peaks tab first.</ThemedText></Screen>;
+  if (!peak) return <Screen><Body>Pick a peak from the Peaks tab first.</Body></Screen>;
 
   const dateOk = DATE_RE.test(date) && !Number.isNaN(Date.parse(date));
   const duplicate = logs.some((l) => l.peakId === peak.id && l.date === date);
@@ -39,6 +38,7 @@ export default function NewLogScreen() {
         Alert.alert('Saved without links', "Couldn't create claim links right now. You can tag partners again from the summit page.");
       }
       const [log] = addLogs([{ peakId: peak.id, date, partners: tagged, note: note.trim(), source: 'manual' }]);
+      success();
       router.replace(`/log/${log.id}`);
     } finally {
       setSaving(false);
@@ -47,42 +47,38 @@ export default function NewLogScreen() {
 
   return (
     <Screen>
-      <ThemedText type="subtitle">{peak.name}</ThemedText>
+      <Display size={30}>{peak.name}</Display>
 
-      <SectionTitle>Date</SectionTitle>
+      <Label>Date</Label>
       <TextInput
         value={date}
         onChangeText={setDate}
         placeholder="YYYY-MM-DD"
         placeholderTextColor={t.textSecondary}
         autoCapitalize="none"
-        style={[styles.input, { color: t.text, borderColor: dateOk ? t.border : t.accent }]}
+        style={[styles.input, { color: t.text, borderColor: dateOk ? t.border : t.accent, backgroundColor: t.backgroundElement }]}
       />
       {duplicate && (
-        <ThemedText type="small" style={{ color: t.accent }}>
-          You already logged {peak.name} on this day.
-        </ThemedText>
+        <Body style={{ color: t.accent, fontSize: 13 }}>You already logged {peak.name} on this day.</Body>
       )}
 
-      <SectionTitle>Who was with you</SectionTitle>
+      <Label>Who was with you</Label>
       <Card>
         <PartnerEditor names={partners} onChange={setPartners} />
-        <ThemedText type="small" themeColor="textSecondary">
-          Each person gets a link to claim this summit. It goes straight onto their passport.
-        </ThemedText>
+        <Body muted style={{ fontSize: 13 }}>Each person gets a link to claim this summit. It lands in their register too.</Body>
       </Card>
 
-      <SectionTitle>Note</SectionTitle>
+      <Label>Note</Label>
       <TextInput
         value={note}
         onChangeText={setNote}
         placeholder="Conditions, route, how it went"
         placeholderTextColor={t.textSecondary}
         multiline
-        style={[styles.input, styles.note, { color: t.text, borderColor: t.border }]}
+        style={[styles.input, styles.note, { color: t.text, borderColor: t.border, backgroundColor: t.backgroundElement }]}
       />
 
-      <Button title="Save summit" loading={saving} disabled={!dateOk || duplicate} onPress={save} />
+      <Button title="Sign the register" loading={saving} disabled={!dateOk || duplicate} onPress={save} />
     </Screen>
   );
 }

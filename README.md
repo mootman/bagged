@@ -1,6 +1,8 @@
-# Bagged
+# Register (working name)
 
 A summit passport. It fills itself in from your photos, and your friends fill it in when they tag you.
+
+To rename the app, change `src/constants/brand.ts` and `name` in `app.json`.
 
 MVP scope: Colorado 14ers only (the traditional 58).
 
@@ -11,10 +13,24 @@ MVP scope: Colorado 14ers only (the traditional 58).
 - **Passport.** A map that lights up the peaks you've done, list progress (`11/58`), Four Favorites, and a diary.
 - **Manual logging** from the Peaks tab.
 - **Tag your crew.** Each partner gets a claim link: "You summited Quandary with Matt. Claim it." The link opens a page that works without an account. Requires Supabase (see below).
-- **Summit card.** A 9:16 image for Instagram stories, with your progress and map.
+- **Summit card.** A full-bleed 9:16 image for Instagram stories, using your summit photo and list progress.
 - **Safety basics.** Warnings on Class 3+ peaks, no route directions, and links to 14ers.com for routes and conditions.
 
 Intentionally left out for now: crews and planning, the want-to-climb list, live GPS tracking, offline maps, Apple Health import, accounts and sync, and a paid tier.
+
+## Design principles
+
+Borrowed from Letterboxd, AllTrails, and Strava:
+
+- **Content is the hero.** Every peak has a 2:3 poster: your own summit photo, or generated ridgeline art. Grids of posters are the main navigation, like Letterboxd's film grid.
+- **Dark, tinted neutrals.** Slate backgrounds, never pure black, with text that isn't pure white, so photos and art are the brightest things on screen.
+- **One color, one meaning.** Alpenglow orange means action or a summit you've earned. Glacier blue is for links. Gold is for finishing a list.
+- **Collection with visible gaps.** Unclimbed peaks are dimmed, climbed ones glow. The gaps make you want to fill them.
+- **Big numbers, quiet labels.** Stats lead with the number, Wrapped style.
+- **Diary, not feed.** Your log is grouped by year with big dates, like Letterboxd's diary.
+- **Backdrops.** Peak and summit pages open with a wide image that fades into the page.
+- **A friendly guide, not a drill sergeant.** Plain, warm copy (the AllTrails tone shift). Hard peaks get a clear label and an honest warning.
+- **Tactile.** Haptics when you sign a summit, press feedback on everything.
 
 ## Run it
 

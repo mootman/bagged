@@ -25,6 +25,8 @@ type Store = State & {
   dismissCandidate: (key: string) => void;
   /** Peak ids with at least one log. */
   summitedIds: Set<string>;
+  /** Most recent summit photo per peak, for posters. */
+  photoFor: Map<string, string>;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -102,6 +104,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       toggleFavorite,
       dismissCandidate,
       summitedIds: new Set(state.logs.map((l) => l.peakId)),
+      photoFor: new Map(
+        state.logs
+          .filter((l) => l.photoId)
+          .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+          .map((l) => [l.peakId, l.photoId!]),
+      ),
     };
   }, [state, ready, addLogs, updateLog, removeLog, setProfile, toggleFavorite, dismissCandidate]);
 

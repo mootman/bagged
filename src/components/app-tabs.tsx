@@ -1,31 +1,25 @@
 import { NativeTabs } from 'expo-router/native-tabs';
-import { useColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
-
+  const t = useTheme();
   return (
     <NativeTabs
-      backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      backgroundColor={t.background}
+      indicatorColor={t.backgroundSelected}
+      labelStyle={{ selected: { color: t.accent } }}>
       <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Label>Passport</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="mountain.2.fill" md="landscape" />
       </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
+      <NativeTabs.Trigger name="scan">
+        <NativeTabs.Trigger.Label>Find summits</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="photo.stack" md="photo_library" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="peaks">
+        <NativeTabs.Trigger.Label>Peaks</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="list.bullet" md="list" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

@@ -1,56 +1,74 @@
-# Welcome to your Expo app 👋
+# Bagged
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A summit passport. It fills itself in from your photos, and your friends fill it in when they tag you.
 
-## Get started
+MVP scope: Colorado 14ers only (the traditional 58).
 
-1. Install dependencies
+## What's in the MVP
 
-   ```bash
-   npm install
-   ```
+- **Find summits from your camera roll.** The app reads the GPS location saved on each photo and checks it against the summit of every 14er. Nothing leaves the phone. Matches are grouped by peak and day, and you confirm each one.
+- **GPX import.** Works with Garmin, Gaia, CalTopo, or any app that exports GPX.
+- **Passport.** A map that lights up the peaks you've done, list progress (`11/58`), Four Favorites, and a diary.
+- **Manual logging** from the Peaks tab.
+- **Tag your crew.** Each partner gets a claim link: "You summited Quandary with Matt. Claim it." The link opens a page that works without an account. Requires Supabase (see below).
+- **Summit card.** A 9:16 image for Instagram stories, with your progress and map.
+- **Safety basics.** Warnings on Class 3+ peaks, no route directions, and links to 14ers.com for routes and conditions.
 
-2. Start the app
+Intentionally left out for now: crews and planning, the want-to-climb list, live GPS tracking, offline maps, Apple Health import, accounts and sync, and a paid tier.
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+The photo scan and summit card need native modules that aren't in Expo Go, so use a development build:
 
-### Other setup steps
+```bash
+npx eas-cli@latest build --profile development --platform ios
+# or, with Xcode installed:
+npx expo run:ios
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Peaks, logging, and the passport also run in the browser with `npx expo start --web`. The photo scan doesn't work on web.
 
-## Learn more
+## Claim links (optional backend)
 
-To learn more about developing your project with Expo, look at the following resources:
+1. Create a free Supabase project.
+2. Run `supabase/schema.sql` in its SQL editor.
+3. Copy `.env.example` to `.env` and fill in the URL and anon key.
+4. To make links open in a browser, deploy the web build and set `EXPO_PUBLIC_WEB_URL`:
+   ```bash
+   npx expo export --platform web   # output in dist/, deploy anywhere static (EAS Hosting, Vercel, Netlify)
+   ```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Without a backend, everything else still works. Partners are saved but no link is created.
 
-## Join the community
+The `claim_funnel` view in Supabase shows tags sent vs. claimed per week. That's the main growth metric to watch.
 
-Join our community of developers creating universal apps.
+## Tests
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx vitest run     # summit detection + GPX parsing
+npx tsc --noEmit
+npx expo lint
+```
+
+## How detection works
+
+`src/lib/detect.ts`
+
+- A photo counts if it's within 120 m of a summit, or 50 m for a GPS track point.
+- It's high confidence if it's within 50 m (photos) or 25 m (tracks).
+- Each point is credited only to the closest peak, so a photo on Grays doesn't also count for Torreys.
+- Points that land on the same peak on the same local day merge into one candidate.
+- Five unranked peaks (Conundrum, North Eolus, Mount Cameron, and others) have unverified coordinates. They're marked `approx` and get a wider radius, but never high confidence.
+
+## Data to verify before launch
+
+- Coordinates for the peaks marked `approx` in `src/data/co14ers.ts`.
+- The Class 3+ list in `src/app/peak/[id].tsx`.
+- Whether Mount Cameron belongs in your version of "the 58". Lists differ.
+
+Peak coordinates come from Wikipedia's list of Colorado fourteeners and soaringweb.org's CO 14er control points.

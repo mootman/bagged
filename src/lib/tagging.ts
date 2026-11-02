@@ -1,5 +1,6 @@
-import type { Partner } from './types';
 import { createClaims, hasBackend } from './supabase';
+
+type Partner = { name: string; claimToken?: string };
 
 /**
  * Turn partner names into Partner records, creating claim links on the server for any

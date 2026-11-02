@@ -33,31 +33,71 @@ export type SummitCandidate = {
   confidence: Confidence;
 };
 
-export type Partner = {
-  name: string;
-  /** Present once a claim link has been created on the server. */
-  claimToken?: string;
-  claimed?: boolean;
-};
+export type LogSource = 'photo' | 'gpx' | 'manual' | 'claim' | 'plan';
 
-export type LogSource = 'photo' | 'gpx' | 'manual' | 'claim';
-
-export type SummitLog = {
+/** Someone on the app. `me` is always the signed-in user. */
+export type User = {
   id: string;
-  peakId: string;
-  date: string | null;
-  partners: Partner[];
-  note: string;
-  source: LogSource;
-  createdAt: number;
-  /** Who tagged you, for logs that came from a claim link. */
-  taggedBy?: string;
-  /** Camera-roll asset id of a summit photo, used as the poster. */
-  photoId?: string;
-};
-
-export type Profile = {
   name: string;
+  handle: string;
+  /** Where they usually start from, e.g. "Denver". */
+  home: string;
+  /** Avatar background, picked once. */
+  color: string;
   /** Up to four peak ids. */
   favorites: string[];
+};
+
+/** Conditions report attached to an ascent: the "beta" other people plan around. */
+export type Beta = {
+  surface?: 'Dry' | 'Patchy snow' | 'Snow' | 'Ice';
+  traction?: 'None' | 'Microspikes' | 'Crampons';
+  wind?: 'Calm' | 'Breezy' | 'Howling';
+  /** Local time on top, "HH:MM". */
+  summitTime?: string;
+  route?: string;
+};
+
+export type Comment = { id: string; userId: string; text: string; at: number };
+
+/** One person standing on one summit on one day. */
+export type Ascent = {
+  id: string;
+  userId: string;
+  peakId: string;
+  date: string | null;
+  /** Other app users who were there. Each of them gets their own ascent too. */
+  withIds: string[];
+  /** People who aren't on the app yet; each gets a claim link. */
+  guests: { name: string; claimToken?: string }[];
+  note: string;
+  beta?: Beta;
+  source: LogSource;
+  createdAt: number;
+  /** Camera-roll asset id (only on the device that took it). */
+  photoId?: string;
+  kudos: string[];
+  comments: Comment[];
+  /** Set when this ascent came from someone else's tag or a group plan. */
+  taggedBy?: string;
+  planId?: string;
+};
+
+/** A climb people are getting together for. Open seats are how strangers become partners. */
+export type Plan = {
+  id: string;
+  peakId: string;
+  date: string;
+  /** Trailhead start, "HH:MM". */
+  start: string;
+  hostId: string;
+  memberIds: string[];
+  /** Asked to join, waiting on the host. */
+  requestIds: string[];
+  /** Total group size the host wants, host included. */
+  size: number;
+  visibility: 'crew' | 'public';
+  note: string;
+  createdAt: number;
+  done?: boolean;
 };

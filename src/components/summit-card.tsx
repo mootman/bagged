@@ -6,8 +6,8 @@ import { StyleSheet, Text, View, type HostInstance } from 'react-native';
 import { RidgelineArt } from '@/components/ridgeline-art';
 import { APP_NAME } from '@/constants/brand';
 import { Colors, Type } from '@/constants/theme';
-import { formatDate } from '@/lib/store';
-import type { Peak, SummitLog } from '@/lib/types';
+import { formatDate, useStore } from '@/lib/store';
+import type { Ascent, Peak } from '@/lib/types';
 import { usePhoto } from '@/lib/use-photo';
 
 const c = Colors.dark;
@@ -18,7 +18,7 @@ const c = Colors.dark;
  */
 export const SummitCard = forwardRef<HostInstance, {
   peak: Peak;
-  log: SummitLog;
+  log: Ascent;
   listCount: number;
   listTotal: number;
   name: string;
@@ -26,7 +26,8 @@ export const SummitCard = forwardRef<HostInstance, {
 }>(function SummitCard({ peak, log, listCount, listTotal, name, width }, ref) {
   const uri = usePhoto(log.photoId);
   const s = width / 360;
-  const partners = log.partners.map((p) => p.name);
+  const { user } = useStore();
+  const partners = [...log.withIds.map((id) => user(id)?.name.split(' ')[0] ?? ''), ...log.guests.map((g) => g.name)].filter(Boolean);
 
   return (
     <View ref={ref} collapsable={false} style={[styles.card, { width, height: width * (16 / 9) }]}>

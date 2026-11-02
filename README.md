@@ -6,6 +6,18 @@ To rename the app, change `src/constants/brand.ts` and `name` in `app.json`.
 
 MVP scope: Colorado 14ers only (the traditional 58).
 
+## The product
+
+Three jobs, in order of how often people need them:
+
+1. **Who's going, and can I join?** Plans with open seats. Your crew's plans, plus public plans from climbers you don't know yet. Inviting suggests friends who want that peak.
+2. **What's it like up there right now?** Every ascent can carry a four-tap conditions report (surface, traction, wind, time on top). Peak pages lead with the freshest one. The feed counts fresh reports.
+3. **Your record, filled in by your crew.** Climb together, log once: tagging friends or finishing a plan puts the summit on everyone's register. The passport, ridgeline posters and 3D view make that record worth keeping.
+
+Social layer: follow, feed (one card per group climb, milestones like "19th 14er"), kudos (double-tap), comments, want-to-climb lists, "you both want Capitol, plan it together", profiles.
+
+**Demo crew.** Until accounts are live, the app runs on sample friends, plans and reports (`src/lib/social/seed.ts`) and says so on the You tab. The backend schema with row level security is in `supabase/social.sql`; wiring the client to it is the next step.
+
 ## What's in the MVP
 
 - **Find summits from your camera roll.** The app reads the GPS location saved on each photo and checks it against the summit of every 14er. Nothing leaves the phone. Matches are grouped by peak and day, and you confirm each one.

@@ -41,7 +41,7 @@ export default function ClaimScreen() {
       const finalName = name.trim() || claim.partner_name;
       if (!profile.name) setProfile({ name: finalName });
       if (!already) {
-        addLogs([{ peakId: claim.peak_id, date: claim.climb_date, partners: [{ name: claim.tagger_name }], note: '', source: 'claim', taggedBy: claim.tagger_name }]);
+        addLogs([{ peakId: claim.peak_id, date: claim.climb_date, guests: [{ name: claim.tagger_name }], note: '', source: 'claim' }]);
       }
       await markClaimed(claim.token, finalName).catch(() => {});
       success();

@@ -51,7 +51,11 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="peak/[id]" options={{ title: '' }} />
             <Stack.Screen name="log/new" options={{ title: 'Sign the register', presentation: 'modal' }} />
-            <Stack.Screen name="log/[id]" options={{ title: '' }} />
+            <Stack.Screen name="ascent/[id]" options={{ title: '' }} />
+            <Stack.Screen name="user/[id]" options={{ title: '' }} />
+            <Stack.Screen name="plan/new" options={{ title: 'Plan a climb', presentation: 'modal' }} />
+            <Stack.Screen name="plan/[id]" options={{ title: '' }} />
+            <Stack.Screen name="scan" options={{ title: 'Find old summits' }} />
             <Stack.Screen name="share/[id]" options={{ title: 'Summit card', presentation: 'modal' }} />
             <Stack.Screen name="claim/[token]" options={{ title: 'Claim your summit' }} />
             <Stack.Screen name="signed/[id]" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />

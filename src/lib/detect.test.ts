@@ -92,7 +92,7 @@ describe('detectSummits from photos', () => {
   });
 
   it('uses a wider radius for unverified peaks but never calls them high confidence', () => {
-    const c = peak('Conundrum Peak');
+    const c = peak('North Eolus');
     const [hit] = detectSummits([{ ...north(c, 250), time: AUG_12 }], CO_14ERS, PHOTO_OPTIONS);
     expect(hit.peakId).toBe(c.id);
     expect(hit.confidence).toBe('medium');

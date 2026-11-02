@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 
 const c = Colors.dark;
@@ -43,12 +43,12 @@ export function Screen({
 
 /** Display type: tight, heavy headings like Letterboxd film titles. */
 export function Display({ children, size = 34, style }: { children: ReactNode; size?: number; style?: StyleProp<TextStyle> }) {
-  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.08, fontWeight: '800', letterSpacing: -0.6 }, style]}>{children}</Text>;
+  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.1, fontFamily: Type.display, letterSpacing: -0.4 }, style]}>{children}</Text>;
 }
 
 export function Body({ children, muted, style, numberOfLines }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number }) {
   return (
-    <Text numberOfLines={numberOfLines} style={[{ color: muted ? c.textSecondary : c.text, fontSize: 15, lineHeight: 21 }, style]}>
+    <Text numberOfLines={numberOfLines} style={[{ color: muted ? c.textSecondary : c.text, fontSize: 15, lineHeight: 22, fontFamily: Type.body }, style]}>
       {children}
     </Text>
   );
@@ -65,7 +65,7 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
       <Label>{title}</Label>
       {action && (
         <Pressable onPress={onAction} hitSlop={10}>
-          <Text style={{ color: c.link, fontSize: 13, fontWeight: '600' }}>{action}</Text>
+          <Text style={{ color: c.link, fontSize: 13, fontFamily: Type.bodyMedium }}>{action}</Text>
         </Pressable>
       )}
     </View>
@@ -102,7 +102,7 @@ export function Button({
         { backgroundColor: bg, opacity: disabled ? 0.35 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         style,
       ]}>
-      {loading ? <ActivityIndicator color={fg} /> : <Text style={{ color: fg, fontSize: 16, fontWeight: '700' }}>{title}</Text>}
+      {loading ? <ActivityIndicator color={fg} /> : <Text style={{ color: fg, fontSize: 16, fontFamily: Type.bodyBold }}>{title}</Text>}
     </Pressable>
   );
 }
@@ -119,7 +119,7 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
         onPress();
       }}
       style={[styles.chip, { backgroundColor: active ? c.text : c.backgroundElement }]}>
-      <Text style={{ color: active ? c.background : c.textSecondary, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+      <Text style={{ color: active ? c.background : c.textSecondary, fontSize: 12, fontFamily: Type.mono, letterSpacing: 0.4 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -149,13 +149,13 @@ export function ProgressBar({ value, total, color = c.accent, height = 8 }: { va
 
 const styles = StyleSheet.create({
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
-  label: { color: c.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
+  label: { color: c.textMuted, fontSize: 11, fontFamily: Type.mono, letterSpacing: 1, textTransform: 'uppercase' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.three },
-  button: { minHeight: 52, borderRadius: Radius.md, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
-  card: { borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement },
+  button: { minHeight: 54, borderRadius: 99, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: Radius.sm, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
   chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 99 },
   stats: { flexDirection: 'row', paddingVertical: Spacing.two },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
-  statValue: { color: c.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
-  statLabel: { color: c.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' },
+  statValue: { color: c.text, fontSize: 34, fontFamily: Type.display, letterSpacing: -0.5 },
+  statLabel: { color: c.textMuted, fontSize: 10, fontFamily: Type.mono, letterSpacing: 1, textTransform: 'uppercase' },
 });

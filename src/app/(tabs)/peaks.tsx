@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { PeakPoster } from '@/components/peak-poster';
+import { Tilt } from '@/components/tilt';
 import { Chip, Display, Screen } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { useStore } from '@/lib/store';
 
 const c = Colors.dark;
@@ -32,8 +33,8 @@ export default function PeaksScreen() {
     <Screen tabs>
       <View style={{ gap: 2 }}>
         <Display size={30}>Colorado 14ers</Display>
-        <Text style={{ color: c.textSecondary, fontSize: 15 }}>
-          <Text style={{ color: c.accent, fontWeight: '800' }}>{climbed}</Text> of {peaks.length} signed
+        <Text style={{ color: c.textSecondary, fontSize: 15, fontFamily: Type.displayItalic }}>
+          <Text style={{ color: c.accent, fontFamily: Type.display }}>{climbed}</Text> of {peaks.length} signed
         </Text>
       </View>
       <TextInput
@@ -50,9 +51,9 @@ export default function PeaksScreen() {
       </View>
       <View style={[styles.grid, { gap }]}>
         {shown.map((p) => (
-          <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)} style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+          <Tilt key={p.id} width={posterW} height={posterW * 1.5} onPress={() => router.push(`/peak/${p.id}`)}>
             <PeakPoster peak={p} width={posterW} climbed={summitedIds.has(p.id)} photoId={photoFor.get(p.id)} />
-          </Pressable>
+          </Tilt>
         ))}
       </View>
       {shown.length === 0 && (
@@ -65,7 +66,7 @@ export default function PeaksScreen() {
 }
 
 const styles = StyleSheet.create({
-  search: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: Radius.md, padding: 14, fontSize: 16 },
+  search: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 99, paddingHorizontal: 18, paddingVertical: 14, fontSize: 16, fontFamily: Type.body, borderWidth: 1, borderColor: c.border },
   chips: { flexDirection: 'row', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

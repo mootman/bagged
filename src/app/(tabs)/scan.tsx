@@ -99,7 +99,7 @@ export default function ScanScreen() {
 
   function save() {
     const chosen = fresh.filter((f) => selected.has(candidateKey(f.peakId, f.date)));
-    addLogs(
+    const created = addLogs(
       chosen.map((f) => ({
         peakId: f.peakId,
         date: f.date,
@@ -114,7 +114,9 @@ export default function ScanScreen() {
     setFound([]);
     setSelected(new Set());
     setProgress(null);
-    router.navigate('/');
+    // Celebrate with the highest peak signed.
+    const top = created.slice().sort((a, b) => (peakById.get(b.peakId)?.elevationFt ?? 0) - (peakById.get(a.peakId)?.elevationFt ?? 0))[0];
+    if (top) router.push({ pathname: '/signed/[id]', params: { id: top.id, count: String(created.length) } });
   }
 
   const scanning = progress != null && !progress.done;

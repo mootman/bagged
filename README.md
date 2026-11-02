@@ -18,6 +18,16 @@ MVP scope: Colorado 14ers only (the traditional 58).
 
 Intentionally left out for now: crews and planning, the want-to-climb list, live GPS tracking, offline maps, Apple Health import, accounts and sync, and a paid tier.
 
+## Visual system
+
+- **Real terrain everywhere.** `scripts/bake-terrain.py` pulls the actual elevation model around each summit (5 km square, 96×96) from AWS Terrain Tiles and bakes it into `src/data/terrain.generated.ts`. It also checks every listed summit coordinate against the elevation model.
+- **Ridgeline posters.** Each peak's poster is a ridgeline plot of its real terrain, lit in alpenglow once you've climbed it.
+- **3D relief model.** Peak pages render the terrain as a round relief model with three.js. Drag to turn it, and scrub the light from dawn to night.
+- **Signing moment.** Logging a summit plays a full-screen celebration: the mountain draws in, a summit-register stamp slams down with a heavy haptic, and the list count ticks up.
+- **Type.** Fraunces (editorial serif) for names and numbers, JetBrains Mono for coordinates and labels, Inter for body copy.
+
+Terrain data: AWS Terrain Tiles (Mapzen terrarium), derived from USGS 3DEP/NED, SRTM and others. Fonts: Google Fonts, OFL.
+
 ## Design principles
 
 Borrowed from Letterboxd, AllTrails, and Strava:

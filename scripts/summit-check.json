@@ -1,0 +1,466 @@
+[
+ {
+  "name": "Mount Elbert",
+  "listedFt": 14440,
+  "demFt": 14424,
+  "demLat": 39.11789,
+  "demLon": -106.44517,
+  "offsetM": 22
+ },
+ {
+  "name": "Mount Massive",
+  "listedFt": 14428,
+  "demFt": 14416,
+  "demLat": 39.18723,
+  "demLon": -106.47558,
+  "offsetM": 32
+ },
+ {
+  "name": "Mount Harvard",
+  "listedFt": 14421,
+  "demFt": 14403,
+  "demLat": 38.9244,
+  "demLon": -106.3207,
+  "offsetM": 0
+ },
+ {
+  "name": "Blanca Peak",
+  "listedFt": 14351,
+  "demFt": 14346,
+  "demLat": 37.57741,
+  "demLon": -105.48549,
+  "offsetM": 14
+ },
+ {
+  "name": "La Plata Peak",
+  "listedFt": 14343,
+  "demFt": 14335,
+  "demLat": 39.0294,
+  "demLon": -106.4729,
+  "offsetM": 0
+ },
+ {
+  "name": "Uncompahgre Peak",
+  "listedFt": 14321,
+  "demFt": 14319,
+  "demLat": 38.0717,
+  "demLon": -107.46256,
+  "offsetM": 40
+ },
+ {
+  "name": "Crestone Peak",
+  "listedFt": 14300,
+  "demFt": 14297,
+  "demLat": 37.96681,
+  "demLon": -105.58539,
+  "offsetM": 14
+ },
+ {
+  "name": "Mount Lincoln",
+  "listedFt": 14293,
+  "demFt": 14283,
+  "demLat": 39.3515,
+  "demLon": -106.11137,
+  "offsetM": 20
+ },
+ {
+  "name": "Castle Peak",
+  "listedFt": 14279,
+  "demFt": 14254,
+  "demLat": 39.0097,
+  "demLon": -106.86128,
+  "offsetM": 10
+ },
+ {
+  "name": "Grays Peak",
+  "listedFt": 14278,
+  "demFt": 14272,
+  "demLat": 39.63381,
+  "demLon": -105.81748,
+  "offsetM": 14
+ },
+ {
+  "name": "Mount Antero",
+  "listedFt": 14276,
+  "demFt": 14250,
+  "demLat": 38.67419,
+  "demLon": -106.24632,
+  "offsetM": 14
+ },
+ {
+  "name": "Torreys Peak",
+  "listedFt": 14275,
+  "demFt": 14263,
+  "demLat": 39.6428,
+  "demLon": -105.82108,
+  "offsetM": 10
+ },
+ {
+  "name": "Quandary Peak",
+  "listedFt": 14271,
+  "demFt": 14262,
+  "demLat": 39.39721,
+  "demLon": -106.1064,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Blue Sky",
+  "listedFt": 14271,
+  "demFt": 14255,
+  "demLat": 39.5883,
+  "demLon": -105.64345,
+  "offsetM": 30
+ },
+ {
+  "name": "Longs Peak",
+  "listedFt": 14259,
+  "demFt": 14261,
+  "demLat": 40.25491,
+  "demLon": -105.61639,
+  "offsetM": 110
+ },
+ {
+  "name": "Mount Wilson",
+  "listedFt": 14252,
+  "demFt": 14236,
+  "demLat": 37.83919,
+  "demLon": -107.9916,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Shavano",
+  "listedFt": 14231,
+  "demFt": 14223,
+  "demLat": 38.61911,
+  "demLon": -106.2393,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Princeton",
+  "listedFt": 14204,
+  "demFt": 14194,
+  "demLat": 38.74911,
+  "demLon": -106.24252,
+  "offsetM": 14
+ },
+ {
+  "name": "Mount Belford",
+  "listedFt": 14203,
+  "demFt": 14170,
+  "demLat": 38.96061,
+  "demLon": -106.3607,
+  "offsetM": 10
+ },
+ {
+  "name": "Crestone Needle",
+  "listedFt": 14203,
+  "demFt": 14173,
+  "demLat": 37.9647,
+  "demLon": -105.57649,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Yale",
+  "listedFt": 14200,
+  "demFt": 14196,
+  "demLat": 38.84411,
+  "demLon": -106.31392,
+  "offsetM": 14
+ },
+ {
+  "name": "Mount Bross",
+  "listedFt": 14178,
+  "demFt": 14185,
+  "demLat": 39.33531,
+  "demLon": -106.10758,
+  "offsetM": 14
+ },
+ {
+  "name": "Kit Carson Mountain",
+  "listedFt": 14171,
+  "demFt": 14172,
+  "demLat": 37.9797,
+  "demLon": -105.6026,
+  "offsetM": 0
+ },
+ {
+  "name": "Maroon Peak",
+  "listedFt": 14163,
+  "demFt": 14147,
+  "demLat": 39.07071,
+  "demLon": -106.98888,
+  "offsetM": 14
+ },
+ {
+  "name": "Tabeguache Peak",
+  "listedFt": 14162,
+  "demFt": 14109,
+  "demLat": 38.62568,
+  "demLon": -106.25056,
+  "offsetM": 36
+ },
+ {
+  "name": "Mount Oxford",
+  "listedFt": 14160,
+  "demFt": 14141,
+  "demLat": 38.9648,
+  "demLon": -106.33868,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Sneffels",
+  "listedFt": 14158,
+  "demFt": 14150,
+  "demLat": 38.00389,
+  "demLon": -107.7923,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Democrat",
+  "listedFt": 14155,
+  "demFt": 14148,
+  "demLat": 39.33951,
+  "demLon": -106.13988,
+  "offsetM": 14
+ },
+ {
+  "name": "Capitol Peak",
+  "listedFt": 14137,
+  "demFt": 14131,
+  "demLat": 39.15021,
+  "demLon": -107.08278,
+  "offsetM": 14
+ },
+ {
+  "name": "Pikes Peak",
+  "listedFt": 14115,
+  "demFt": 14117,
+  "demLat": 38.84059,
+  "demLon": -105.04455,
+  "offsetM": 32
+ },
+ {
+  "name": "Snowmass Mountain",
+  "listedFt": 14099,
+  "demFt": 14103,
+  "demLat": 39.11862,
+  "demLon": -107.06638,
+  "offsetM": 22
+ },
+ {
+  "name": "Windom Peak",
+  "listedFt": 14093,
+  "demFt": 14083,
+  "demLat": 37.6212,
+  "demLon": -107.5919,
+  "offsetM": 0
+ },
+ {
+  "name": "Mount Eolus",
+  "listedFt": 14090,
+  "demFt": 14088,
+  "demLat": 37.6218,
+  "demLon": -107.6227,
+  "offsetM": 0
+ },
+ {
+  "name": "Challenger Point",
+  "listedFt": 14087,
+  "demFt": 14090,
+  "demLat": 37.9804,
+  "demLon": -105.60649,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Columbia",
+  "listedFt": 14077,
+  "demFt": 14054,
+  "demLat": 38.90381,
+  "demLon": -106.2975,
+  "offsetM": 10
+ },
+ {
+  "name": "Missouri Mountain",
+  "listedFt": 14074,
+  "demFt": 14062,
+  "demLat": 38.9476,
+  "demLon": -106.3785,
+  "offsetM": 0
+ },
+ {
+  "name": "Humboldt Peak",
+  "listedFt": 14070,
+  "demFt": 14064,
+  "demLat": 37.9762,
+  "demLon": -105.55531,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Bierstadt",
+  "listedFt": 14065,
+  "demFt": 14066,
+  "demLat": 39.5826,
+  "demLon": -105.6688,
+  "offsetM": 0
+ },
+ {
+  "name": "Sunlight Peak",
+  "listedFt": 14065,
+  "demFt": 14054,
+  "demLat": 37.62731,
+  "demLon": -107.5959,
+  "offsetM": 10
+ },
+ {
+  "name": "Handies Peak",
+  "listedFt": 14058,
+  "demFt": 14049,
+  "demLat": 37.913,
+  "demLon": -107.5044,
+  "offsetM": 0
+ },
+ {
+  "name": "Culebra Peak",
+  "listedFt": 14053,
+  "demFt": 14045,
+  "demLat": 37.12231,
+  "demLon": -105.1858,
+  "offsetM": 10
+ },
+ {
+  "name": "Ellingwood Point",
+  "listedFt": 14048,
+  "demFt": 14060,
+  "demLat": 37.58251,
+  "demLon": -105.4927,
+  "offsetM": 10
+ },
+ {
+  "name": "Mount Lindsey",
+  "listedFt": 14048,
+  "demFt": 14059,
+  "demLat": 37.58388,
+  "demLon": -105.44479,
+  "offsetM": 22
+ },
+ {
+  "name": "Little Bear Peak",
+  "listedFt": 14043,
+  "demFt": 14032,
+  "demLat": 37.56669,
+  "demLon": -105.49731,
+  "offsetM": 14
+ },
+ {
+  "name": "Mount Sherman",
+  "listedFt": 14043,
+  "demFt": 14022,
+  "demLat": 39.22293,
+  "demLon": -106.17129,
+  "offsetM": 259
+ },
+ {
+  "name": "Redcloud Peak",
+  "listedFt": 14041,
+  "demFt": 14040,
+  "demLat": 37.94091,
+  "demLon": -107.42179,
+  "offsetM": 14
+ },
+ {
+  "name": "Pyramid Peak",
+  "listedFt": 14025,
+  "demFt": 14014,
+  "demLat": 39.07161,
+  "demLon": -106.95008,
+  "offsetM": 14
+ },
+ {
+  "name": "Wilson Peak",
+  "listedFt": 14023,
+  "demFt": 14022,
+  "demLat": 37.8603,
+  "demLon": -107.9847,
+  "offsetM": 0
+ },
+ {
+  "name": "San Luis Peak",
+  "listedFt": 14022,
+  "demFt": 14012,
+  "demLat": 37.9868,
+  "demLon": -106.9313,
+  "offsetM": 0
+ },
+ {
+  "name": "Wetterhorn Peak",
+  "listedFt": 14021,
+  "demFt": 14007,
+  "demLat": 38.0607,
+  "demLon": -107.5109,
+  "offsetM": 0
+ },
+ {
+  "name": "Mount of the Holy Cross",
+  "listedFt": 14011,
+  "demFt": 14001,
+  "demLat": 39.46671,
+  "demLon": -106.4817,
+  "offsetM": 10
+ },
+ {
+  "name": "Huron Peak",
+  "listedFt": 14010,
+  "demFt": 14003,
+  "demLat": 38.94559,
+  "demLon": -106.4381,
+  "offsetM": 10
+ },
+ {
+  "name": "Sunshine Peak",
+  "listedFt": 14007,
+  "demFt": 14011,
+  "demLat": 37.9228,
+  "demLon": -107.4256,
+  "offsetM": 0
+ },
+ {
+  "name": "North Maroon Peak",
+  "listedFt": 14014,
+  "demFt": 14008,
+  "demLat": 39.07601,
+  "demLon": -106.98708,
+  "offsetM": 14
+ },
+ {
+  "name": "El Diente Peak",
+  "listedFt": 14159,
+  "demFt": 14140,
+  "demLat": 37.83932,
+  "demLon": -108.00519,
+  "offsetM": 22
+ },
+ {
+  "name": "Conundrum Peak",
+  "listedFt": 14060,
+  "demFt": 14030,
+  "demLat": 39.01458,
+  "demLon": -106.86356,
+  "offsetM": 0
+ },
+ {
+  "name": "North Eolus",
+  "listedFt": 14039,
+  "demFt": 14086,
+  "demLat": 37.6253,
+  "demLon": -107.62113,
+  "offsetM": 20
+ },
+ {
+  "name": "Mount Cameron",
+  "listedFt": 14238,
+  "demFt": 14233,
+  "demLat": 39.34636,
+  "demLon": -106.11872,
+  "offsetM": 0
+ }
+]

@@ -39,7 +39,7 @@ export default function NewLogScreen() {
       }
       const [log] = addLogs([{ peakId: peak.id, date, partners: tagged, note: note.trim(), source: 'manual' }]);
       success();
-      router.replace(`/log/${log.id}`);
+      router.replace(`/signed/${log.id}`);
     } finally {
       setSaving(false);
     }

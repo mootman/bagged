@@ -1,0 +1,173 @@
+"""
+Bake real terrain around every peak into src/data/terrain.generated.ts.
+
+Source: AWS Terrain Tiles (terrarium encoding), open data. Attribution in README.
+For each peak: a GRID x GRID heightmap (meters, uint16) covering SPAN_M x SPAN_M
+centered on the summit, plus a DEM check of the listed summit coordinate.
+
+Usage: python3 scripts/bake-terrain.py
+"""
+
+import base64
+import io
+import json
+import math
+import os
+import re
+import struct
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+from PIL import Image
+
+ZOOM = 13
+GRID = 96
+SPAN_M = 5000
+TILE_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CACHE = os.path.join(ROOT, ".terrain-cache")
+
+
+def load_peaks():
+    """Parse id, lat, lon, elevation from the TS data file so there's one source of truth."""
+    src = open(os.path.join(ROOT, "src/data/co14ers.ts")).read()
+    rows = re.findall(r"\['([^']+)', (\d+), ([\d.-]+), ([\d.-]+), '([^']+)'", src)
+    peaks = []
+    for name, ft, lat, lon, _rng in rows:
+        slug = re.sub(r"(^-|-$)", "", re.sub(r"[^a-z0-9]+", "-", name.lower()))
+        peaks.append({"id": f"co-{slug}", "name": name, "ft": int(ft), "lat": float(lat), "lon": float(lon)})
+    return peaks
+
+
+def tile_xy(lat, lon, z):
+    n = 2**z
+    x = (lon + 180) / 360 * n
+    y = (1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * n
+    return x, y
+
+
+def fetch_tile(x, y):
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, f"{ZOOM}_{x}_{y}.png")
+    if not os.path.exists(path):
+        url = TILE_URL.format(z=ZOOM, x=x, y=y)
+        subprocess.run(["curl", "-sSf", "-o", path, url], check=True, timeout=60)
+    img = Image.open(path).convert("RGB")
+    return img.load()
+
+
+tiles = {}
+
+
+def elevation(fx, fy):
+    """Elevation in meters at fractional tile coordinates, bilinear."""
+
+    def px(ix, iy):
+        tx, ty = ix // 256, iy // 256
+        r, g, b = tiles[(tx, ty)][ix % 256, iy % 256]
+        return r * 256 + g + b / 256 - 32768
+
+    gx, gy = fx * 256 - 0.5, fy * 256 - 0.5
+    x0, y0 = int(math.floor(gx)), int(math.floor(gy))
+    dx, dy = gx - x0, gy - y0
+    return (
+        px(x0, y0) * (1 - dx) * (1 - dy)
+        + px(x0 + 1, y0) * dx * (1 - dy)
+        + px(x0, y0 + 1) * (1 - dx) * dy
+        + px(x0 + 1, y0 + 1) * dx * dy
+    )
+
+
+def bake(peak):
+    lat, lon = peak["lat"], peak["lon"]
+    half = SPAN_M / 2
+    dlat = half / 111_320
+    dlon = half / (111_320 * math.cos(math.radians(lat)))
+    # Make sure every tile the window touches is loaded.
+    x0, y0 = tile_xy(lat + dlat * 1.1, lon - dlon * 1.1, ZOOM)
+    x1, y1 = tile_xy(lat - dlat * 1.1, lon + dlon * 1.1, ZOOM)
+    need = [(tx, ty) for tx in range(int(x0), int(x1) + 1) for ty in range(int(y0), int(y1) + 1)]
+    for t in need:
+        if t not in tiles:
+            tiles[t] = fetch_tile(*t)
+
+    heights = []
+    for j in range(GRID):  # north -> south
+        la = lat + dlat - (2 * dlat) * j / (GRID - 1)
+        for i in range(GRID):  # west -> east
+            lo = lon - dlon + (2 * dlon) * i / (GRID - 1)
+            heights.append(elevation(*tile_xy(la, lo, ZOOM)))
+
+    # DEM check: highest point within 250 m of the listed summit.
+    best = (-1e9, lat, lon)
+    steps = 25
+    for a in range(-steps, steps + 1):
+        for b in range(-steps, steps + 1):
+            la = lat + (250 / 111_320) * a / steps
+            lo = lon + (250 / (111_320 * math.cos(math.radians(lat)))) * b / steps
+            e = elevation(*tile_xy(la, lo, ZOOM))
+            if e > best[0]:
+                best = (e, la, lo)
+    dem_ft = best[0] * 3.28084
+    off_m = math.hypot((best[1] - lat) * 111_320, (best[2] - lon) * 111_320 * math.cos(math.radians(lat)))
+
+    lo_m, hi_m = min(heights), max(heights)
+    raw = struct.pack(f"<{GRID * GRID}H", *[max(0, min(65535, int(round(h)))) for h in heights])
+    return {
+        "id": peak["id"],
+        "min": round(lo_m),
+        "max": round(hi_m),
+        "data": base64.b64encode(raw).decode(),
+        "check": {
+            "name": peak["name"],
+            "listedFt": peak["ft"],
+            "demFt": round(dem_ft),
+            "demLat": round(best[1], 5),
+            "demLon": round(best[2], 5),
+            "offsetM": round(off_m),
+        },
+    }
+
+
+def main():
+    peaks = load_peaks()
+    print(f"{len(peaks)} peaks", file=sys.stderr)
+    # Prefetch tiles in parallel.
+    want = set()
+    for p in peaks:
+        x, y = tile_xy(p["lat"], p["lon"], ZOOM)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                want.add((int(x) + dx, int(y) + dy))
+    with ThreadPoolExecutor(8) as ex:
+        for t, img in zip(want, ex.map(lambda t: fetch_tile(*t), want)):
+            tiles[t] = img
+
+    out = [bake(p) for p in peaks]
+    checks = [o.pop("check") for o in out]
+
+    ts = [
+        "// Generated by scripts/bake-terrain.py. Do not edit.",
+        "// Elevation data: AWS Terrain Tiles (Mapzen terrarium), derived from USGS 3DEP/NED, SRTM and others.",
+        f"export const TERRAIN_GRID = {GRID};",
+        f"export const TERRAIN_SPAN_M = {SPAN_M};",
+        "/** Per peak: min/max meters and base64 little-endian uint16 heights, row-major, north to south, west to east. */",
+        "export const TERRAIN: Record<string, { min: number; max: number; data: string }> = {",
+    ]
+    for o in out:
+        ts.append(f"  '{o['id']}': {{ min: {o['min']}, max: {o['max']}, data: '{o['data']}' }},")
+    ts.append("};")
+    with open(os.path.join(ROOT, "src/data/terrain.generated.ts"), "w") as f:
+        f.write("\n".join(ts) + "\n")
+    with open(os.path.join(ROOT, "scripts/summit-check.json"), "w") as f:
+        json.dump(checks, f, indent=1)
+
+    print("\nSummit check (listed vs DEM high point within 250 m):", file=sys.stderr)
+    for c in sorted(checks, key=lambda c: -c["offsetM"]):
+        flag = "  <-- check" if c["offsetM"] > 80 or abs(c["listedFt"] - c["demFt"]) > 120 else ""
+        print(f"  {c['name']:<26} listed {c['listedFt']} ft, DEM {c['demFt']} ft, high point {c['offsetM']:>3} m away{flag}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

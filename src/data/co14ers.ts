@@ -6,8 +6,9 @@ import type { Peak } from '@/lib/types';
  *
  * Ranked coordinates and elevations: Wikipedia, "List of Colorado fourteeners".
  * North Maroon and El Diente: soaringweb.org CO 14er control points.
- * Peaks marked `approx: true` have coordinates entered by hand and need checking
- * against a survey source before launch. Detection uses a wider radius for them.
+ * Conundrum and Mount Cameron: high point found in the elevation model (scripts/bake-terrain.py).
+ * Peaks marked `approx: true` still need checking against a survey source before launch.
+ * Detection uses a wider radius for them.
  */
 type Row = [name: string, elevationFt: number, lat: number, lon: number, range: string];
 
@@ -70,9 +71,9 @@ const ranked: Row[] = [
 const unranked: (Row | [...Row, 'approx'])[] = [
   ['North Maroon Peak', 14014, 39.0761, -106.9872, 'Elk'],
   ['El Diente Peak', 14159, 37.8395, -108.0053, 'San Miguel'],
-  ['Conundrum Peak', 14060, 39.0153, -106.8631, 'Elk', 'approx'],
+  ['Conundrum Peak', 14060, 39.01458, -106.86356, 'Elk'],
   ['North Eolus', 14039, 37.6253, -107.6209, 'San Juan', 'approx'],
-  ['Mount Cameron', 14238, 39.3469, -106.1186, 'Mosquito', 'approx'],
+  ['Mount Cameron', 14238, 39.34636, -106.11872, 'Mosquito'],
 ];
 
 export function slugify(name: string) {

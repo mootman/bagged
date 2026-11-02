@@ -1,8 +1,6 @@
-import { Fraunces_400Regular_Italic, Fraunces_600SemiBold, Fraunces_800ExtraBold } from '@expo-google-fonts/fraunces';
-import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
-import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono';
+import { Overpass_400Regular, Overpass_600SemiBold, Overpass_700Bold, Overpass_800ExtraBold, Overpass_900Black } from '@expo-google-fonts/overpass';
 import { useFonts } from 'expo-font';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
@@ -22,19 +20,10 @@ function HideSplashWhenReady({ fontsReady }: { fontsReady: boolean }) {
 }
 
 export default function RootLayout() {
-  // Dark-only by design: artwork and photos read best on a dark canvas.
+  // One appearance: a light topo sheet.
   const c = Colors.dark;
-  const base = DarkTheme;
-  const [fontsLoaded, fontError] = useFonts({
-    Fraunces_400Regular_Italic,
-    Fraunces_600SemiBold,
-    Fraunces_800ExtraBold,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_700Bold,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_700Bold,
-  });
+  const base = DefaultTheme;
+  const [fontsLoaded, fontError] = useFonts({ Overpass_400Regular, Overpass_600SemiBold, Overpass_700Bold, Overpass_800ExtraBold, Overpass_900Black });
   const fontsReady = fontsLoaded || !!fontError;
   const theme = {
     ...base,
@@ -46,8 +35,8 @@ export default function RootLayout() {
       <ThemeProvider value={theme}>
         <StoreProvider>
           <HideSplashWhenReady fontsReady={fontsReady} />
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShadowVisible: false, headerBackTitle: 'Back', headerTintColor: c.text, headerStyle: { backgroundColor: c.background }, headerTitleStyle: { fontFamily: 'Fraunces_600SemiBold' }, contentStyle: { backgroundColor: c.background } }}>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShadowVisible: false, headerBackTitle: 'Back', headerTintColor: c.text, headerStyle: { backgroundColor: c.background }, headerTitleStyle: { fontFamily: 'Overpass_700Bold' }, contentStyle: { backgroundColor: c.background } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="peak/[id]" options={{ title: '' }} />
             <Stack.Screen name="log/new" options={{ title: 'Sign the register', presentation: 'modal' }} />

@@ -54,12 +54,12 @@ export default function NewAscentScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.background }} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={{ gap: 4 }}>
-        <Text style={styles.kicker}>{peak.elevationFt.toLocaleString()} FT · {peak.range.toUpperCase()}</Text>
         <Text style={styles.title}>{peak.name}</Text>
+        <Text style={styles.kicker}>{peak.elevationFt.toLocaleString()} ft, {peak.range} Range</Text>
       </View>
 
       <Field label="Date">
-        <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} autoCapitalize="none" style={[styles.input, !dateOk && { borderColor: c.accent }]} />
+        <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} autoCapitalize="none" style={[styles.input, !dateOk && { borderLeftWidth: 4, borderLeftColor: c.danger }]} />
         {duplicate && <Text style={styles.warn}>You already logged {peak.name} on this day.</Text>}
       </Field>
 
@@ -70,7 +70,7 @@ export default function NewAscentScreen() {
         <Text style={styles.hint}>Not on the app yet? Add their name and send them an invite link.</Text>
       </Field>
 
-      <Field label={fresh ? 'Conditions · people are planning around this' : 'Conditions (optional)'}>
+      <Field label={fresh ? 'Conditions. People are planning around this.' : 'Conditions, if you remember'}>
         <BetaPicker beta={beta} onChange={setBeta} />
       </Field>
 
@@ -85,10 +85,10 @@ export default function NewAscentScreen() {
 
 const styles = StyleSheet.create({
   page: { padding: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingBottom: Spacing.six },
-  kicker: { color: c.accent, fontFamily: Type.mono, fontSize: 10, letterSpacing: 1.2 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 36 },
-  input: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontFamily: Type.mono, fontSize: 15, borderWidth: 1, borderColor: c.border },
-  note: { minHeight: 90, textAlignVertical: 'top', fontFamily: Type.body },
-  hint: { color: c.textMuted, fontFamily: Type.body, fontSize: 12 },
-  warn: { color: c.accent, fontFamily: Type.body, fontSize: 13 },
+  kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 40, letterSpacing: -1.2 },
+  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 48, fontFamily: Type.bodyMedium, fontSize: 16, fontVariant: ['tabular-nums'] },
+  note: { minHeight: 90, textAlignVertical: 'top', fontFamily: Type.body, paddingTop: 12 },
+  hint: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
+  warn: { color: c.danger, fontFamily: Type.bodyMedium, fontSize: 14 },
 });

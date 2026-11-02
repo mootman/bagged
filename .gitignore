@@ -45,3 +45,4 @@ example
 # secrets
 .env
 .terrain-cache/
+shots/

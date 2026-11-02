@@ -4,9 +4,10 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 
 import { Backdrop } from '@/components/backdrop';
 import { BetaPicker } from '@/components/pickers';
+import { Icon } from '@/components/icon';
 import { Avatar, BetaChips, seatsLeft } from '@/components/social';
 import { Button } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
 import type { Beta } from '@/lib/types';
@@ -41,12 +42,12 @@ export default function PlanScreen() {
       <Stack.Screen options={{ title: '', headerTransparent: true, headerStyle: { backgroundColor: 'transparent' } }} />
       <ScrollView contentContainerStyle={{ paddingBottom: Spacing.six }} keyboardShouldPersistTaps="handled">
         <Backdrop peakId={peak.id} height={340}>
-          <Text style={styles.kicker}>
-            {formatPlanDate(plan.date).toUpperCase()} · {plan.start} START · {plan.visibility === 'public' ? 'OPEN TO ASK' : 'CREW'}
-          </Text>
           <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
             <Text style={styles.title}>{peak.name}</Text>
           </Pressable>
+          <Text style={styles.kicker}>
+            {formatPlanDate(plan.date)}, at the trailhead by {plan.start.replace(/^0/, '')}
+          </Text>
         </Backdrop>
 
         <View style={styles.page}>
@@ -62,7 +63,7 @@ export default function PlanScreen() {
 
           <View style={styles.crewHead}>
             <Text style={styles.section}>Crew</Text>
-            <Text style={[styles.seats, open === 0 && { color: c.textMuted }]}>{open ? `${open} of ${plan.size} seats open` : `Full · ${plan.size}`}</Text>
+            <Text style={[styles.seats, open === 0 && { color: c.textMuted }]}>{open ? `${open} of ${plan.size} seats open` : `Full, ${plan.size} people`}</Text>
           </View>
           <View style={styles.crew}>
             {plan.memberIds.map((m) => (
@@ -71,13 +72,13 @@ export default function PlanScreen() {
                 <Text style={styles.memberName} numberOfLines={1}>
                   {m === ME ? 'You' : user(m)?.name.split(' ')[0]}
                 </Text>
-                {m === plan.hostId && <Text style={styles.hostTag}>HOST</Text>}
+                {m === plan.hostId && <Text style={styles.hostTag}>Host</Text>}
               </Pressable>
             ))}
             {Array.from({ length: open }, (_, i) => (
               <View key={`open${i}`} style={styles.member}>
                 <View style={styles.openSeat}>
-                  <Text style={{ color: c.textMuted, fontSize: 20 }}>+</Text>
+                  <Icon name="plus" size={20} color={c.textSecondary} />
                 </View>
                 <Text style={[styles.memberName, { color: c.textMuted }]}>Open</Text>
               </View>
@@ -86,7 +87,7 @@ export default function PlanScreen() {
 
           {isHost && plan.requestIds.length > 0 && (
             <View style={{ gap: 8 }}>
-              <Text style={styles.label}>WANTS TO JOIN</Text>
+              <Text style={styles.label}>Asking to join</Text>
               {plan.requestIds.map((r) => (
                 <View key={r} style={styles.request}>
                   <Avatar user={user(r)} size={32} />
@@ -100,7 +101,7 @@ export default function PlanScreen() {
           )}
 
           {plan.done ? (
-            <Text style={styles.doneText}>Summited and logged for everyone.</Text>
+            <Text style={styles.doneText}>Logged for everyone on the plan.</Text>
           ) : past && going ? (
             logging ? (
               <View style={styles.logBox}>
@@ -108,10 +109,10 @@ export default function PlanScreen() {
                 <Text style={styles.sub}>This logs the summit for all {plan.memberIds.length} of you. Your conditions report helps the next crew.</Text>
                 <BetaPicker beta={beta} onChange={setBeta} />
                 <TextInput value={note} onChangeText={setNote} placeholder="Anything the next person should know" placeholderTextColor={c.textMuted} multiline style={styles.note} />
-                <Button title={`Log it for the crew`} onPress={finish} />
+                <Button title={`Log it for all ${plan.memberIds.length} of you`} onPress={finish} />
               </View>
             ) : (
-              <Button title="We summited" onPress={() => setLogging(true)} />
+              <Button title="We made it up" onPress={() => setLogging(true)} />
             )
           ) : going ? (
             <Button title={isHost ? 'Cancel plan' : 'Leave plan'} variant="secondary" onPress={() => {
@@ -132,14 +133,14 @@ export default function PlanScreen() {
             />
           ) : null}
 
-          <Text style={[styles.section, { marginTop: Spacing.two }]}>Latest beta</Text>
+          <Text style={[styles.section, { marginTop: Spacing.two }]}>Conditions lately</Text>
           {reports.length === 0 && <Text style={styles.sub}>No reports in the last few weeks. Check 14ers.com before you go.</Text>}
           {reports.map((r) => (
             <Pressable key={r.id} onPress={() => router.push(`/ascent/${r.id}`)} style={styles.report}>
               <View style={styles.reportHead}>
                 <Avatar user={user(r.userId)} size={26} />
                 <Text style={styles.reportWho}>{r.userId === ME ? 'You' : user(r.userId)?.name}</Text>
-                <Text style={[styles.reportAgo, daysSince(r.date) <= 7 && { color: c.success }]}>{daysSince(r.date)}D AGO</Text>
+                <Text style={[styles.reportAgo, daysSince(r.date) <= 7 && { color: c.success }]}>{daysSince(r.date)} days ago</Text>
               </View>
               <BetaChips beta={r.beta} />
               {r.note ? (
@@ -157,31 +158,31 @@ export default function PlanScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  kicker: { color: c.accent, fontFamily: Type.monoBold, fontSize: 10.5, letterSpacing: 1.1 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 42, lineHeight: 46 },
-  hostNote: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: 14, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
-  noteText: { flex: 1, color: c.text, fontFamily: Type.body, fontSize: 15, lineHeight: 21 },
+  kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4 },
+  hostNote: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: Spacing.three, backgroundColor: c.backgroundElement },
+  noteText: { flex: 1, color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   crewHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  section: { color: c.text, fontFamily: Type.display, fontSize: 22 },
-  sub: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
-  seats: { color: c.accent, fontFamily: Type.mono, fontSize: 11 },
+  section: { color: c.text, fontFamily: Type.display, fontSize: 24, letterSpacing: -0.5 },
+  sub: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
+  seats: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15 },
   crew: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   member: { width: 64, alignItems: 'center', gap: 6 },
-  memberName: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 12 },
-  hostTag: { color: c.accent, fontFamily: Type.mono, fontSize: 8, letterSpacing: 1, marginTop: -4 },
-  openSeat: { width: 54, height: 54, borderRadius: 27, borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  label: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10, letterSpacing: 1 },
+  memberName: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13 },
+  hostTag: { color: c.textSecondary, fontFamily: Type.body, fontSize: 12, marginTop: -4 },
+  openSeat: { width: 54, height: 54, borderRadius: 27, backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center' },
+  label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
   request: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  approve: { backgroundColor: c.accent, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 7 },
-  approveText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 13 },
-  logBox: { gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.md, borderWidth: 1, borderColor: 'rgba(255,122,69,0.45)', backgroundColor: '#1E1418' },
-  note: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 14, padding: 14, minHeight: 80, fontFamily: Type.body, fontSize: 15, textAlignVertical: 'top', borderWidth: 1, borderColor: c.border },
-  pending: { padding: 14, borderRadius: Radius.md, borderWidth: 1, borderColor: c.gold },
-  pendingText: { color: c.gold, fontFamily: Type.bodyMedium, fontSize: 14 },
-  doneText: { color: c.success, fontFamily: Type.bodyBold, fontSize: 15 },
-  report: { gap: 8, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
+  approve: { backgroundColor: c.text, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
+  approveText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14 },
+  logBox: { gap: Spacing.three, paddingVertical: Spacing.three, borderTopWidth: 4, borderTopColor: c.accent },
+  note: { backgroundColor: c.backgroundElement, color: c.text, padding: 14, minHeight: 80, fontFamily: Type.body, fontSize: 16, textAlignVertical: 'top' },
+  pending: { padding: 14, backgroundColor: c.backgroundElement, borderLeftWidth: 4, borderLeftColor: c.gold },
+  pendingText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 15 },
+  doneText: { color: c.success, fontFamily: Type.bodyBold, fontSize: 16 },
+  report: { gap: 8, paddingVertical: 12 },
   reportHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  reportWho: { color: c.text, fontFamily: Type.bodyBold, fontSize: 14, flex: 1 },
-  reportAgo: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10 },
-  reportNote: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
+  reportWho: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, flex: 1 },
+  reportAgo: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
+  reportNote: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15, lineHeight: 22 },
 });

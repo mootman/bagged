@@ -60,13 +60,13 @@ export default function SignedScreen() {
   const fadeIn = useAnimatedStyle(() => ({ opacity: textOpacity.get(), transform: [{ translateY: (1 - textOpacity.get()) * 14 }] }));
 
   if (!log || !peak) return null;
-  const stampDate = log.date ? log.date.slice(5).replace('-', '.') + '.' + log.date.slice(2, 4) : 'SUMMIT';
+  const stampDate = log.date ? log.date.slice(5).replace('-', '.') + '.' + log.date.slice(2, 4) : 'Summit';
 
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <View style={StyleSheet.absoluteFill}>
         <RidgelineArt peakId={peak.id} lit width={width} height={height} count={44} top={0.16} bottom={0.78} amplitude={0.22} reveal />
-        <LinearGradient colors={['transparent', 'rgba(10,15,19,0.88)', c.background]} locations={[0, 0.45, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.5 }} />
+        <LinearGradient colors={['transparent', 'rgba(236,238,232,0.9)', c.background]} locations={[0, 0.45, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.5 }} />
       </View>
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
@@ -75,16 +75,16 @@ export default function SignedScreen() {
           </Animated.View>
         </View>
         <Animated.View style={[styles.bottom, fadeIn]}>
-          <Text style={styles.kicker}>{n > 1 ? `${n} SUMMITS SIGNED` : formatDate(log.date).toUpperCase()}</Text>
+          <Text style={styles.kicker}>{n > 1 ? `${n} summits signed` : formatDate(log.date)}</Text>
           <Text style={styles.title}>{n > 1 ? 'Your register is open.' : peak.name}</Text>
           <View style={styles.countRow}>
             <Text style={styles.count}>{shown}</Text>
             <Text style={styles.of}> / {peaks.length}</Text>
-            <Text style={styles.list}>  Colorado 14ers</Text>
+            <Text style={styles.list}>  Colorado fourteeners</Text>
           </View>
           <View style={styles.segments}>
             {peaks.map((p, i) => (
-              <View key={p.id} style={[styles.seg, { backgroundColor: i < shown ? c.accent : 'rgba(237,230,214,0.14)' }]} />
+              <View key={p.id} style={[styles.seg, { backgroundColor: i < shown ? c.accent : c.backgroundSelected }]} />
             ))}
           </View>
           <View style={{ gap: 10, marginTop: 18 }}>
@@ -101,12 +101,12 @@ const styles = StyleSheet.create({
   safe: { flex: 1, justifyContent: 'space-between', paddingHorizontal: 22 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 30 },
   bottom: { paddingBottom: 18 },
-  kicker: { color: c.accent, fontFamily: Type.monoBold, fontSize: 12, letterSpacing: 2 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 48, marginTop: 6 },
+  kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4, marginTop: 4 },
   countRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 12 },
-  count: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 54 },
+  count: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 54, fontVariant: ['tabular-nums'] },
   of: { color: c.textSecondary, fontFamily: Type.display, fontSize: 26 },
-  list: { color: c.textSecondary, fontFamily: Type.mono, fontSize: 12 },
+  list: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16 },
   segments: { flexDirection: 'row', gap: 2, marginTop: 10 },
-  seg: { flex: 1, height: 8, borderRadius: 2 },
+  seg: { flex: 1, height: 8 },
 });

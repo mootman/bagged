@@ -32,27 +32,19 @@ Intentionally left out for now: crews and planning, the want-to-climb list, live
 
 ## Visual system
 
-- **Real terrain everywhere.** `scripts/bake-terrain.py` pulls the actual elevation model around each summit (5 km square, 96×96) from AWS Terrain Tiles and bakes it into `src/data/terrain.generated.ts`. It also checks every listed summit coordinate against the elevation model.
-- **Ridgeline posters.** Each peak's poster is a ridgeline plot of its real terrain, lit in alpenglow once you've climbed it.
-- **3D relief model.** Peak pages render the terrain as a round relief model with three.js. Drag to turn it, and scrub the light from dawn to night.
-- **Signing moment.** Logging a summit plays a full-screen celebration: the mountain draws in, a summit-register stamp slams down with a heavy haptic, and the list count ticks up.
-- **Type.** Fraunces (editorial serif) for names and numbers, JetBrains Mono for coordinates and labels, Inter for body copy.
+The look comes from the subject: a USGS topo sheet and Colorado trail signage, not a generic dark app.
 
-Terrain data: AWS Terrain Tiles (Mapzen terrarium), derived from USGS 3DEP/NED, SRTM and others. Fonts: Google Fonts, OFL.
+- **Paper and ink.** Pale topo-sheet ground (`#ECEEE8`). Surfaces separate by tone, not by borders or shadows.
+- **One ink color.** Ballpoint blue (`#1B4FCB`) marks what you've climbed and the one action that matters on a screen. Unclimbed stays pencil grey.
+- **Overpass**, an open-source cut of Highway Gothic, the typeface on US trail and highway signs. Five sizes, far apart. Sentence case everywhere.
+- **The art is the data.** Ridgelines are traced from real elevation tiles. Summits use the topo map's triangle. The 3D relief and the light slider stay as the one showpiece interaction.
+- **People are initials** on a pale tint of their own hue, the same every time.
+- **Square corners.** No pills, no glow, no gradients except the sky.
 
 ## Design principles
 
-Borrowed from Letterboxd, AllTrails, and Strava:
-
-- **Content is the hero.** Every peak has a 2:3 poster: your own summit photo, or generated ridgeline art. Grids of posters are the main navigation, like Letterboxd's film grid.
-- **Dark, tinted neutrals.** Slate backgrounds, never pure black, with text that isn't pure white, so photos and art are the brightest things on screen.
-- **One color, one meaning.** Alpenglow orange means action or a summit you've earned. Glacier blue is for links. Gold is for finishing a list.
-- **Collection with visible gaps.** Unclimbed peaks are dimmed, climbed ones glow. The gaps make you want to fill them.
-- **Big numbers, quiet labels.** Stats lead with the number, Wrapped style.
-- **Diary, not feed.** Your log is grouped by year with big dates, like Letterboxd's diary.
-- **Backdrops.** Peak and summit pages open with a wide image that fades into the page.
-- **A friendly guide, not a drill sergeant.** Plain, warm copy (the AllTrails tone shift). Hard peaks get a clear label and an honest warning.
-- **Tactile.** Haptics when you sign a summit, press feedback on everything.
+Checked against the anti-AI-design rulesets in [taste-skill](https://github.com/leonxlnx/taste-skill), [anti-ai-slop](https://github.com/Vinayak-Shukla-03/anti-ai-slop) and [impeccable](https://github.com/pbakaus/impeccable). The app avoids:
+mono micro-labels, uppercase tracked kickers, hairline boxes, dark-with-neon palettes, serif plus mono kits, italic accent words, 1/2/3 lists, middle-dot metadata, decorative coordinates, emoji icons and three-part headlines. Copy uses climbers' words ("We made it up", "Ask to join", "Conditions lately").
 
 ## Run it
 

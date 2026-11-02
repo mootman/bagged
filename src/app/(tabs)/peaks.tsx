@@ -66,7 +66,7 @@ export default function PeaksScreen() {
 }
 
 const styles = StyleSheet.create({
-  search: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 99, paddingHorizontal: 18, paddingVertical: 14, fontSize: 16, fontFamily: Type.body, borderWidth: 1, borderColor: c.border },
+  search: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: Type.body },
   chips: { flexDirection: 'row', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

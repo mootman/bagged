@@ -41,20 +41,20 @@ export function Screen({
   );
 }
 
-/** Display type: tight, heavy headings like Letterboxd film titles. */
+/** Display type. Tracking tightens as size grows. */
 export function Display({ children, size = 34, style }: { children: ReactNode; size?: number; style?: StyleProp<TextStyle> }) {
-  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.1, fontFamily: Type.display, letterSpacing: -0.4 }, style]}>{children}</Text>;
+  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.05, fontFamily: Type.display, letterSpacing: -size * 0.025 }, style]}>{children}</Text>;
 }
 
 export function Body({ children, muted, style, numberOfLines }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number }) {
   return (
-    <Text numberOfLines={numberOfLines} style={[{ color: muted ? c.textSecondary : c.text, fontSize: 15, lineHeight: 22, fontFamily: Type.body }, style]}>
+    <Text numberOfLines={numberOfLines} style={[{ color: muted ? c.textSecondary : c.text, fontSize: 16, lineHeight: 24, fontFamily: Type.body }, style]}>
       {children}
     </Text>
   );
 }
 
-/** Small uppercase tracked label for section heads. */
+/** Quiet sentence-case label. */
 export function Label({ children, style, color }: { children: ReactNode; style?: StyleProp<TextStyle>; color?: string }) {
   return <Text style={[styles.label, color ? { color } : null, style]}>{children}</Text>;
 }
@@ -62,7 +62,7 @@ export function Label({ children, style, color }: { children: ReactNode; style?:
 export function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View style={styles.sectionHeader}>
-      <Label>{title}</Label>
+      <Text style={styles.sectionTitle}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} hitSlop={10}>
           <Text style={{ color: c.link, fontSize: 13, fontFamily: Type.bodyMedium }}>{action}</Text>
@@ -119,7 +119,7 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
         onPress();
       }}
       style={[styles.chip, { backgroundColor: active ? c.text : c.backgroundElement }]}>
-      <Text style={{ color: active ? c.background : c.textSecondary, fontSize: 12, fontFamily: Type.mono, letterSpacing: 0.4 }}>{label}</Text>
+      <Text style={{ color: active ? c.background : c.text, fontSize: 14, fontFamily: Type.bodyMedium }}>{label}</Text>
     </Pressable>
   );
 }
@@ -129,7 +129,7 @@ export function Stats({ items }: { items: { value: string; label: string; color?
   return (
     <View style={styles.stats}>
       {items.map((it, i) => (
-        <View key={it.label} style={[styles.stat, i > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: c.border }]}>
+        <View key={it.label} style={styles.stat}>
           <Text style={[styles.statValue, it.color ? { color: it.color } : null]}>{it.value}</Text>
           <Text style={styles.statLabel}>{it.label}</Text>
         </View>
@@ -141,21 +141,22 @@ export function Stats({ items }: { items: { value: string; label: string; color?
 export function ProgressBar({ value, total, color = c.accent, height = 8 }: { value: number; total: number; color?: string; height?: number }) {
   const pct = total ? Math.min(1, value / total) : 0;
   return (
-    <View style={{ height, borderRadius: height / 2, backgroundColor: c.backgroundSelected, overflow: 'hidden' }}>
-      <View style={{ width: `${pct * 100}%`, height: '100%', borderRadius: height / 2, backgroundColor: color }} />
+    <View style={{ height, backgroundColor: c.backgroundSelected, overflow: 'hidden' }}>
+      <View style={{ width: `${pct * 100}%`, height: '100%', backgroundColor: color }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
-  label: { color: c.textMuted, fontSize: 11, fontFamily: Type.mono, letterSpacing: 1, textTransform: 'uppercase' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.three },
-  button: { minHeight: 54, borderRadius: 99, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
-  card: { borderRadius: Radius.sm, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 99 },
+  label: { color: c.textSecondary, fontSize: 13, fontFamily: Type.bodyMedium },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: Spacing.four },
+  sectionTitle: { color: c.text, fontSize: 20, fontFamily: Type.display, letterSpacing: -0.3 },
+  button: { minHeight: 52, borderRadius: Radius.sm, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: Radius.sm, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.sm },
   stats: { flexDirection: 'row', paddingVertical: Spacing.two },
-  stat: { flex: 1, alignItems: 'center', gap: 2 },
-  statValue: { color: c.text, fontSize: 34, fontFamily: Type.display, letterSpacing: -0.5 },
-  statLabel: { color: c.textMuted, fontSize: 10, fontFamily: Type.mono, letterSpacing: 1, textTransform: 'uppercase' },
+  stat: { flex: 1, gap: 2 },
+  statValue: { color: c.text, fontSize: 34, fontFamily: Type.display, letterSpacing: -0.8 },
+  statLabel: { color: c.textSecondary, fontSize: 13, fontFamily: Type.body },
 });

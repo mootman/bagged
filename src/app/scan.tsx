@@ -7,7 +7,7 @@ import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, useWin
 import { PeakPoster } from '@/components/peak-poster';
 import { Body, Button, Card, Display, Label, Screen } from '@/components/ui';
 import { APP_NAME } from '@/constants/brand';
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { detectSummits, PHOTO_OPTIONS, TRACK_OPTIONS } from '@/lib/detect';
 import { parseGpx } from '@/lib/gpx';
 import { success, tap } from '@/lib/haptics';
@@ -173,7 +173,7 @@ export default function ScanScreen() {
         <Card style={{ alignItems: 'center', paddingVertical: Spacing.five, gap: Spacing.three }}>
           <ActivityIndicator color={c.accent} size="large" />
           <Display size={44}>{progress.scanned.toLocaleString()}</Display>
-          <Label>photos checked · {progress.located.toLocaleString()} with location</Label>
+          <Body muted>photos checked, {progress.located.toLocaleString()} with a location</Body>
           <Button title="Stop" variant="secondary" onPress={() => (signal.current.cancelled = true)} style={{ alignSelf: 'stretch' }} />
         </Card>
       ) : (
@@ -203,6 +203,6 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   candDate: { color: c.textSecondary, fontSize: 12, fontWeight: '600' },
-  flag: { position: 'absolute', left: 6, top: 6, backgroundColor: c.gold, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 },
-  flagText: { color: '#1B1B1B', fontSize: 10, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+  flag: { position: 'absolute', left: 6, top: 6, backgroundColor: c.gold, paddingHorizontal: 6, paddingVertical: 2 },
+  flagText: { color: '#FFFFFF', fontSize: 12, fontFamily: Type.bodyBold },
 });

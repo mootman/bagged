@@ -134,11 +134,11 @@ function Scene({
       {/* Plinth under the relief */}
       <mesh position={[0, -0.18, 0]}>
         <cylinderGeometry args={[SIZE / 2 + 0.05, SIZE / 2 + 0.12, 0.36, 96]} />
-        <meshStandardMaterial color="#141C22" roughness={0.8} />
+        <meshStandardMaterial color="#C9CEC3" roughness={0.9} />
       </mesh>
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[SIZE / 2 - 0.02, SIZE / 2 + 0.06, 128]} />
-        <meshBasicMaterial color={c.accent} transparent opacity={0.55} />
+        <meshBasicMaterial color={c.text} />
       </mesh>
       {/* Summit pin */}
       <mesh position={[0, terrain.summitY + 0.55, 0]}>

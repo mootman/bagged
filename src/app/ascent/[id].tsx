@@ -5,7 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { Backdrop } from '@/components/backdrop';
 import { Avatar, FacePile, KudosButton } from '@/components/social';
 import { Button } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { ago, formatDate, ME, useStore } from '@/lib/store';
 
 const c = Colors.dark;
@@ -44,10 +44,10 @@ export default function AscentScreen() {
       <Stack.Screen options={{ title: '', headerTransparent: true, headerStyle: { backgroundColor: 'transparent' } }} />
       <ScrollView contentContainerStyle={{ paddingBottom: Spacing.six }} keyboardShouldPersistTaps="handled">
         <Backdrop peakId={peak.id} photoId={mine ? (a.photoId ?? photoFor.get(peak.id)) : undefined} height={360}>
-          <Text style={styles.kicker}>{formatDate(a.date).toUpperCase()}</Text>
           <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
             <Text style={styles.title}>{peak.name}</Text>
           </Pressable>
+          <Text style={styles.kicker}>{formatDate(a.date)}</Text>
         </Backdrop>
 
         <View style={styles.page}>
@@ -64,7 +64,7 @@ export default function AscentScreen() {
 
           {b?.surface && (
             <View style={styles.betaBox}>
-              <Text style={styles.betaTitle}>CONDITIONS REPORT</Text>
+              <Text style={styles.betaTitle}>Conditions</Text>
               {rows
                 .filter(([, v]) => v)
                 .map(([k, v]) => (
@@ -129,7 +129,7 @@ export default function AscentScreen() {
           </View>
 
           {mine && <Button title="Remove summit" variant="ghost" onPress={remove} style={{ marginTop: Spacing.four }} />}
-          <Text style={styles.footer}>Logged {ago(a.createdAt)} ago{a.taggedBy ? ` · tagged by ${a.taggedBy === ME ? 'you' : user(a.taggedBy)?.name}` : ''}</Text>
+          <Text style={styles.footer}>Logged {ago(a.createdAt)} ago{a.taggedBy ? `, tagged by ${a.taggedBy === ME ? 'you' : user(a.taggedBy)?.name}` : ''}</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -138,27 +138,27 @@ export default function AscentScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  kicker: { color: c.accent, fontFamily: Type.monoBold, fontSize: 11, letterSpacing: 1.4 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 42, lineHeight: 46 },
+  kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4 },
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  who: { flex: 1, color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
-  note: { color: c.text, fontFamily: Type.body, fontSize: 17, lineHeight: 25 },
-  betaBox: { borderWidth: 1, borderColor: c.border, borderRadius: Radius.sm, padding: 14, gap: 8, backgroundColor: c.backgroundElement },
-  betaTitle: { color: c.success, fontFamily: Type.monoBold, fontSize: 10, letterSpacing: 1.2 },
+  who: { flex: 1, color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
+  note: { color: c.text, fontFamily: Type.body, fontSize: 18, lineHeight: 27 },
+  betaBox: { padding: Spacing.three, gap: 10, backgroundColor: c.backgroundElement },
+  betaTitle: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
   betaRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  betaKey: { color: c.textMuted, fontFamily: Type.mono, fontSize: 12 },
-  betaVal: { color: c.text, fontFamily: Type.mono, fontSize: 12 },
+  betaKey: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15 },
+  betaVal: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  kudosText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, flex: 1 },
-  section: { color: c.text, fontFamily: Type.display, fontSize: 22, marginTop: Spacing.two },
-  empty: { color: c.textMuted, fontFamily: Type.body, fontSize: 14 },
+  kudosText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15, flex: 1 },
+  section: { color: c.text, fontFamily: Type.display, fontSize: 24, letterSpacing: -0.5, marginTop: Spacing.two },
+  empty: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16 },
   comment: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  cName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 13 },
-  cAgo: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10 },
-  cText: { color: c.text, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
+  cName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
+  cAgo: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
+  cText: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: { flex: 1, backgroundColor: c.backgroundElement, color: c.text, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 12, fontFamily: Type.body, fontSize: 14, borderWidth: 1, borderColor: c.border },
-  send: { backgroundColor: c.accent, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 11 },
-  sendText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 14 },
-  footer: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10, textAlign: 'center' },
+  input: { flex: 1, backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 46, fontFamily: Type.body, fontSize: 16 },
+  send: { backgroundColor: c.text, paddingHorizontal: 16, minHeight: 46, justifyContent: 'center' },
+  sendText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 2 },
+  footer: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, textAlign: 'center' },
 });

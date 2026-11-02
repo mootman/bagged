@@ -61,7 +61,7 @@ export default function ClaimScreen() {
         </Display>
         <Body muted style={{ textAlign: 'center' }}>
           {formatDate(claim.climb_date)}
-          {peak ? `  ·  ${peak.elevationFt.toLocaleString()} ft` : ''}
+          {peak ? `, ${peak.elevationFt.toLocaleString()} ft` : ''}
         </Body>
       </View>
 

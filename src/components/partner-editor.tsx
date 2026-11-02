@@ -42,6 +42,6 @@ export function PartnerEditor({ names, onChange }: { names: string[]; onChange: 
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one + 2, borderRadius: 99 },
+  chip: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.one + 2 },
   input: { borderWidth: 1, borderRadius: Radius.sm, padding: Spacing.three, fontSize: 16 },
 });

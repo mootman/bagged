@@ -43,8 +43,8 @@ export function TimeSlider({ value, onChange }: { value: number; onChange: (t: n
   return (
     <View style={{ gap: 10 }}>
       <View style={styles.row}>
-        <Text style={styles.label}>LIGHT</Text>
-        <Text style={[styles.value, { color: s.horizon }]}>{s.label}</Text>
+        <Text style={styles.label}>Light</Text>
+        <Text style={styles.value}>{s.label}</Text>
       </View>
       <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={styles.hit} {...pan.panHandlers}>
         <LinearGradient
@@ -54,12 +54,12 @@ export function TimeSlider({ value, onChange }: { value: number; onChange: (t: n
           end={{ x: 1, y: 0 }}
           style={styles.track}
         />
-        <View pointerEvents="none" style={[styles.knob, { left: value * width - 13, backgroundColor: s.sun, shadowColor: s.sun }]} />
+        <View pointerEvents="none" style={[styles.knob, { left: value * width - 13, backgroundColor: s.sun }]} />
       </View>
       <View style={styles.row}>
         {SKY_STOPS.filter((_, i) => i % 2 === 0 || i === SKY_STOPS.length - 1).map((k) => (
           <Text key={k.label} style={styles.tick}>
-            {k.label.toUpperCase()}
+            {k.label}
           </Text>
         ))}
       </View>
@@ -69,10 +69,10 @@ export function TimeSlider({ value, onChange }: { value: number; onChange: (t: n
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  label: { color: c.textMuted, fontFamily: Type.mono, fontSize: 11, letterSpacing: 1 },
-  value: { fontFamily: Type.displayItalic, fontSize: 20 },
+  label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
+  value: { color: c.text, fontFamily: Type.display, fontSize: 20 },
   hit: { height: 34, justifyContent: 'center' },
-  track: { height: 6, borderRadius: 3 },
+  track: { height: 8 },
   knob: {
     position: 'absolute',
     top: 4,
@@ -80,10 +80,7 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 3,
-    borderColor: c.background,
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
+    borderColor: c.text,
   },
-  tick: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9, letterSpacing: 0.8 },
+  tick: { color: c.textSecondary, fontFamily: Type.body, fontSize: 12 },
 });

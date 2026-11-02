@@ -1,24 +1,17 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { Animated, Easing } from 'react-native';
-import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { G, Path, Rect } from 'react-native-svg';
 
 import { Colors } from '@/constants/theme';
 import { ridgelines } from '@/lib/ridgelines';
 
 const c = Colors.dark;
 const AnimatedG = Animated.createAnimatedComponent(G);
-const LIT_STOPS: [string, string][] = [['0', '#0B1020'], ['0.32', '#2A1630'], ['0.5', '#14111C'], ['1', c.background]];
-const DIM_STOPS: [string, string][] = [['0', '#0E151B'], ['1', c.background]];
-
-function lerpColor(a: string, b: string, t: number) {
-  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
-  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
-  return `#${pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
-}
 
 /**
- * The peak's real terrain as a ridgeline plot. Lit in alpenglow when you've climbed it,
- * quiet bone lines when you haven't. `reveal` draws the lines in from back to front.
+ * The peak's real terrain as a ridgeline plot, drawn like ink on a topo sheet.
+ * Climbed: ballpoint blue. Not yet: pencil. The summit gets the map's triangle.
+ * `reveal` draws the lines in from back to front.
  */
 export const RidgelineArt = memo(function RidgelineArt({
   peakId,
@@ -30,7 +23,8 @@ export const RidgelineArt = memo(function RidgelineArt({
   bottom,
   amplitude,
   reveal = false,
-  sun = true,
+  paper = c.background,
+  marker = true,
 }: {
   peakId: string;
   lit: boolean;
@@ -41,6 +35,10 @@ export const RidgelineArt = memo(function RidgelineArt({
   bottom?: number;
   amplitude?: number;
   reveal?: boolean;
+  /** Ground color behind the lines; each line is filled with it to hide the ones behind. */
+  paper?: string;
+  marker?: boolean;
+  /** Kept for call-site compatibility; there is no glow any more. */
   sun?: boolean;
 }) {
   const art = useMemo(
@@ -56,45 +54,30 @@ export const RidgelineArt = memo(function RidgelineArt({
   }, [reveal, peakId, progress]);
 
   if (!art) return null;
-  const bgId = `bg-${peakId}-${lit ? 1 : 0}-${width}`;
-  const sunId = `sun-${peakId}-${width}`;
-  const sunY = art.summit.y - height * 0.05;
+  const ink = lit ? c.accent : c.line;
+  const thick = width > 300 ? 1.3 : width > 120 ? 1.05 : 0.9;
+  const tri = width > 300 ? 7 : width > 120 ? 4.5 : 3;
 
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <Defs>
-        <LinearGradient id={bgId} x1="0" y1="0" x2="0" y2={height} gradientUnits="userSpaceOnUse">
-          {(lit ? LIT_STOPS : DIM_STOPS).map(([o, col]) => (
-            <Stop key={o} offset={o} stopColor={col} />
-          ))}
-        </LinearGradient>
-        <RadialGradient id={sunId} cx={art.summit.x} cy={sunY} r={width * 0.55} gradientUnits="userSpaceOnUse">
-          <Stop offset="0" stopColor={c.accent} stopOpacity={0.55} />
-          <Stop offset="0.35" stopColor={c.glow} stopOpacity={0.18} />
-          <Stop offset="1" stopColor={c.glow} stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect width={width} height={height} fill={`url(#${bgId})`} />
-      {lit && sun && <Rect width={width} height={height} fill={`url(#${sunId})`} />}
+      <Rect width={width} height={height} fill={paper} />
       {art.lines.map((l, i) => {
-        const stroke = lit ? lerpColor(c.glow, c.accent, l.t) : c.line;
-        const opacity = lit ? 0.55 + 0.45 * l.t : 0.18 + 0.32 * l.t;
+        const opacity = lit ? 0.45 + 0.55 * l.t : 0.35 + 0.4 * l.t;
         const start = (i / art.lines.length) * 0.75;
-        const o = reveal
-          ? progress.interpolate({ inputRange: [start, Math.min(1, start + 0.25)], outputRange: [0, 1], extrapolate: 'clamp' })
-          : 1;
+        const o = reveal ? progress.interpolate({ inputRange: [start, Math.min(1, start + 0.25)], outputRange: [0, 1], extrapolate: 'clamp' }) : 1;
         return (
           <AnimatedG key={i} opacity={o}>
-            <Path d={l.fill} fill={`url(#${bgId})`} />
-            <Path d={l.line} fill="none" stroke={stroke} strokeOpacity={opacity} strokeWidth={width > 300 ? 1.4 : 1} strokeLinejoin="round" />
+            <Path d={l.fill} fill={paper} />
+            <Path d={l.line} fill="none" stroke={ink} strokeOpacity={opacity} strokeWidth={thick} strokeLinejoin="round" />
           </AnimatedG>
         );
       })}
-      {lit && (
-        <G>
-          <Circle cx={art.summit.x} cy={art.summit.y - 3} r={width > 300 ? 9 : 5} fill={c.accent} opacity={0.25} />
-          <Circle cx={art.summit.x} cy={art.summit.y - 3} r={width > 300 ? 3.2 : 2} fill="#FFE3D3" />
-        </G>
+      {marker && (
+        <Path
+          d={`M${art.summit.x} ${art.summit.y - tri * 1.9} l${tri} ${tri * 1.6} h${-tri * 2} Z`}
+          fill={lit ? c.accent : c.text}
+          opacity={lit ? 1 : 0.55}
+        />
       )}
     </Svg>
   );

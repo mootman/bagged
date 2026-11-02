@@ -17,8 +17,8 @@ export function Backdrop({ peakId, photoId, lit = true, height = 340, children }
     <View style={{ height, width: '100%' }}>
       {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : <RidgelineArt peakId={peakId} lit={lit} width={width} height={height} count={34} top={0.12} bottom={0.8} amplitude={0.28} reveal />}
       <LinearGradient
-        colors={['rgba(18,22,26,0.15)', 'rgba(18,22,26,0.35)', c.background]}
-        locations={[0, 0.55, 1]}
+        colors={['rgba(236,238,232,0)', 'rgba(236,238,232,0.55)', c.background]}
+        locations={[0, 0.6, 1]}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.content}>{children}</View>

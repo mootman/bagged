@@ -1,18 +1,26 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
+import { Icon } from '@/components/icon';
 import { RidgelineArt } from '@/components/ridgeline-art';
-import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { success, tap } from '@/lib/haptics';
 import { ago, daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
 import type { Ascent, Beta, Plan, User } from '@/lib/types';
 
 const c = Colors.dark;
 
+function mix(hex: string, into: string, t: number) {
+  const a = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const b = [1, 3, 5].map((i) => parseInt(into.slice(i, i + 2), 16));
+  return `#${a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Each person: a stable initial on a pale tint of their own hue. */
 export function Avatar({ user, size = 32, ring }: { user?: User; size?: number; ring?: string }) {
+  const hue = user?.color ?? '#7A827C';
   const initials = (user?.name || '?')
     .split(' ')
     .map((w) => w[0])
@@ -25,13 +33,13 @@ export function Avatar({ user, size = 32, ring }: { user?: User; size?: number; 
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: user?.color ?? c.backgroundSelected,
+        backgroundColor: mix(hue, c.background, 0.62),
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: ring ? 2 : 0,
         borderColor: ring,
       }}>
-      <Text style={{ color: '#0A0F13', fontFamily: Type.bodyBold, fontSize: size * 0.38 }}>{initials}</Text>
+      <Text style={{ color: mix(hue, '#000000', 0.55), fontFamily: Type.bodyBold, fontSize: size * 0.38, marginTop: size * 0.06 }}>{initials}</Text>
     </View>
   );
 }
@@ -43,33 +51,36 @@ export function FacePile({ ids, size = 26, max = 4, onPress }: { ids: string[]; 
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={{ flexDirection: 'row', alignItems: 'center' }}>
       {shown.map((id, i) => (
-        <View key={id} style={{ marginLeft: i === 0 ? 0 : -size * 0.3 }}>
+        <View key={id} style={{ marginLeft: i === 0 ? 0 : -size * 0.28 }}>
           <Avatar user={user(id)} size={size} ring={c.background} />
         </View>
       ))}
-      {extra > 0 && <Text style={{ color: c.textSecondary, fontFamily: Type.mono, fontSize: 11, marginLeft: 6 }}>+{extra}</Text>}
+      {extra > 0 && <Text style={{ color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13, marginLeft: 6 }}>+{extra}</Text>}
     </Pressable>
   );
 }
 
-const SURFACE_COLOR: Record<string, string> = { Dry: c.success, 'Patchy snow': c.gold, Snow: c.link, Ice: '#B9A7FF' };
-const WIND_COLOR: Record<string, string> = { Calm: c.success, Breezy: c.gold, Howling: c.accent };
+/** Good, heads up, careful. Colour says which, like a map legend. */
+const GOOD = c.success;
+const CAREFUL = c.gold;
+const BAD = c.danger;
+const SURFACE: Record<string, string> = { Dry: GOOD, 'Patchy snow': CAREFUL, Snow: CAREFUL, Ice: BAD };
+const WIND: Record<string, string> = { Calm: GOOD, Breezy: CAREFUL, Howling: BAD };
 
-/** Conditions at a glance. Color carries the meaning: green easy, gold heads up, orange careful. */
 export function BetaChips({ beta, compact }: { beta?: Beta; compact?: boolean }) {
   if (!beta) return null;
-  const chips: [string, string][] = [];
-  if (beta.surface) chips.push([beta.surface, SURFACE_COLOR[beta.surface] ?? c.textSecondary]);
-  if (beta.traction && beta.traction !== 'None') chips.push([beta.traction, c.text]);
-  if (beta.traction === 'None' && !compact) chips.push(['No traction', c.textSecondary]);
-  if (beta.wind) chips.push([`${beta.wind} wind`, WIND_COLOR[beta.wind] ?? c.textSecondary]);
-  if (beta.summitTime && !compact) chips.push([`Top ${beta.summitTime}`, c.textSecondary]);
-  if (!chips.length) return null;
+  const items: [string, string | null][] = [];
+  if (beta.surface) items.push([beta.surface, SURFACE[beta.surface]]);
+  if (beta.traction && beta.traction !== 'None') items.push([beta.traction, null]);
+  if (beta.traction === 'None' && !compact) items.push(['No traction needed', null]);
+  if (beta.wind) items.push([`${beta.wind} wind`, WIND[beta.wind]]);
+  if (beta.summitTime && !compact) items.push([`On top ${beta.summitTime.replace(/^0/, '')}`, null]);
+  if (!items.length) return null;
   return (
     <View style={styles.chips}>
-      {chips.map(([label, color]) => (
+      {items.map(([label, color]) => (
         <View key={label} style={styles.chip}>
-          <View style={[styles.chipDot, { backgroundColor: color }]} />
+          {color && <View style={[styles.swatch, { backgroundColor: color }]} />}
           <Text style={styles.chipText}>{label}</Text>
         </View>
       ))}
@@ -77,38 +88,42 @@ export function BetaChips({ beta, compact }: { beta?: Beta; compact?: boolean })
   );
 }
 
-/** Summit kudos. The little peak jumps when you give one. */
 export function KudosButton({ ascent }: { ascent: Ascent }) {
   const { toggleKudos } = useStore();
   const mine = ascent.kudos.includes(ME);
   const pop = useSharedValue(1);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }, { translateY: (1 - pop.get()) * 10 }] }));
-  const disabled = ascent.userId === ME;
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }, { translateY: (1 - pop.get()) * 8 }] }));
+  const own = ascent.userId === ME;
   return (
     <Pressable
-      disabled={disabled}
+      disabled={own}
+      accessibilityLabel={mine ? 'Remove kudos' : 'Give kudos'}
       onPress={() => {
         if (!mine) {
           success();
-          pop.set(withSequence(withTiming(1.45, { duration: 110 }), withSpring(1, { damping: 6, stiffness: 300 })));
+          pop.set(withSequence(withTiming(1.35, { duration: 110 }), withSpring(1, { damping: 7, stiffness: 300 })));
         } else tap();
         toggleKudos(ascent.id);
       }}
-      hitSlop={8}
+      hitSlop={10}
       style={styles.action}>
-      <Animated.Text style={[styles.kudosIcon, { color: mine ? c.accent : c.textSecondary }, style]}>▲</Animated.Text>
+      <Animated.View style={style}>
+        <Icon name="summit" filled={mine} color={mine ? c.accent : c.text} />
+      </Animated.View>
       <Text style={[styles.actionText, mine && { color: c.accent }]}>{ascent.kudos.length || ''}</Text>
     </Pressable>
   );
 }
 
-/** "Jess's 19th 14er" or "Repeat". The milestone is what people actually react to. */
+/** "19th fourteener" or "Again". The milestone is what people react to. */
 function milestone(a: Ascent, all: Ascent[]) {
-  const prior = all.filter((x) => x.userId === a.userId && (x.date ?? '') < (a.date ?? '') );
-  if (prior.some((x) => x.peakId === a.peakId)) return 'REPEAT';
+  const prior = all.filter((x) => x.userId === a.userId && (x.date ?? '') < (a.date ?? ''));
+  if (prior.some((x) => x.peakId === a.peakId)) return 'Again';
   const n = new Set(prior.map((x) => x.peakId)).size + 1;
-  const suf = n % 10 === 1 && n % 100 !== 11 ? 'ST' : n % 10 === 2 && n % 100 !== 12 ? 'ND' : n % 10 === 3 && n % 100 !== 13 ? 'RD' : 'TH';
-  return `${n}${suf} 14ER`;
+  if (n === 1) return 'First fourteener';
+  if (n === 58) return 'Finished the 58';
+  const suf = n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th';
+  return `${n}${suf} fourteener`;
 }
 
 export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: string[] }) {
@@ -121,9 +136,9 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
   const burstStyle = useAnimatedStyle(() => ({ opacity: burst.get(), transform: [{ scale: 0.6 + burst.get() * 0.8 }] }));
   if (!peak) return null;
 
-  const cardW = Math.min(width, MaxContentWidth);
+  const cardW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
   const lead = user(ascent.userId);
-  const others = climbers.filter((u) => u !== ascent.userId).map((u) => user(u)?.name.split(' ')[0] ?? 'someone');
+  const others = climbers.filter((u) => u !== ascent.userId).map((u) => (u === ME ? 'you' : (user(u)?.name.split(' ')[0] ?? 'someone')));
   const wanted = wantsOf(ME).includes(peak.id);
   const fresh = daysSince(ascent.date) <= 7;
 
@@ -141,40 +156,41 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
     }
     lastTap.current = now;
   };
+
   return (
     <View style={styles.card}>
       <Pressable onPress={() => router.push(`/user/${ascent.userId}`)} style={styles.cardHead}>
-        <FacePile ids={climbers} size={34} max={3} />
+        <FacePile ids={climbers} size={36} max={3} />
         <View style={{ flex: 1 }}>
           <Text style={styles.who} numberOfLines={1}>
             {ascent.userId === ME ? 'You' : lead?.name}
-            {others.length ? <Text style={styles.whoWith}> with {others.join(', ')}</Text> : null}
+            {others.length ? <Text style={styles.whoWith}> with {others.join(' and ')}</Text> : null}
           </Text>
           <Text style={styles.meta}>
-            {ago(ascent.createdAt).toUpperCase()}{lead?.home ? ` · ${lead.home.toUpperCase()}` : ''}
+            {milestone(ascent, ascents)}, {ago(ascent.createdAt)} ago
           </Text>
         </View>
-        <Text style={styles.milestone}>{milestone(ascent, ascents)}</Text>
       </Pressable>
 
-      <Pressable onPress={onMediaPress}>
-        <View style={{ height: 230, overflow: 'hidden' }}>
-          <RidgelineArt peakId={peak.id} lit width={cardW} height={230} count={28} top={0.08} bottom={0.8} amplitude={0.3} />
-          <LinearGradient pointerEvents="none" colors={['transparent', 'rgba(10,15,19,0.92)']} style={styles.mediaFade} />
-          <View style={styles.mediaText}>
-            <Text style={styles.peakName}>{peak.name}</Text>
-            <Text style={styles.peakMeta}>
-              {peak.elevationFt.toLocaleString()} FT{ascent.beta?.route ? `  ·  ${ascent.beta.route.toUpperCase()}` : ''}
-            </Text>
-          </View>
-          <Animated.Text pointerEvents="none" style={[styles.burst, burstStyle]}>▲</Animated.Text>
+      <Pressable onPress={onMediaPress} style={{ paddingHorizontal: Spacing.three }}>
+        <View style={{ height: 200, overflow: 'hidden', backgroundColor: '#F6F7F3' }}>
+          <RidgelineArt peakId={peak.id} lit width={cardW} height={200} count={26} top={0.1} bottom={0.95} amplitude={0.32} paper="#F6F7F3" />
+          <Animated.View pointerEvents="none" style={[styles.burst, burstStyle]}>
+            <Icon name="summit" size={88} filled color={c.accent} />
+          </Animated.View>
         </View>
       </Pressable>
 
       <View style={styles.cardBody}>
+        <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
+          <Text style={styles.peakName}>{peak.name}</Text>
+          <Text style={styles.peakMeta}>
+            {peak.elevationFt.toLocaleString()} ft{ascent.beta?.route ? `, ${ascent.beta.route}` : ''}
+          </Text>
+        </Pressable>
         {ascent.beta?.surface && (
-          <View style={{ gap: 6 }}>
-            <Text style={[styles.betaLabel, fresh && { color: c.success }]}>{fresh ? 'FRESH BETA' : 'CONDITIONS'}</Text>
+          <View style={{ gap: 8 }}>
+            <Text style={[styles.betaLabel, fresh && { color: c.success }]}>{fresh ? `Fresh conditions, ${daysSince(ascent.date) === 0 ? 'today' : `${daysSince(ascent.date)} days ago`}` : 'Conditions'}</Text>
             <BetaChips beta={ascent.beta} />
           </View>
         )}
@@ -187,11 +203,11 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
 
       <View style={styles.actions}>
         <KudosButton ascent={ascent} />
-        <Pressable onPress={() => router.push(`/ascent/${ascent.id}`)} hitSlop={8} style={styles.action}>
-          <Text style={styles.commentIcon}>◯</Text>
+        <Pressable onPress={() => router.push(`/ascent/${ascent.id}`)} hitSlop={10} style={styles.action} accessibilityLabel="Comments">
+          <Icon name="comment" />
           <Text style={styles.actionText}>{ascent.comments.length || ''}</Text>
         </Pressable>
-        {ascent.kudos.length > 0 && <FacePile ids={ascent.kudos} size={20} max={4} />}
+        {ascent.kudos.length > 0 && <FacePile ids={ascent.kudos} size={22} max={4} />}
         <View style={{ flex: 1 }} />
         {ascent.userId !== ME && (
           <Pressable
@@ -200,8 +216,9 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
               toggleWant(peak.id);
             }}
             hitSlop={8}
-            style={[styles.want, wanted && { borderColor: c.accent, backgroundColor: 'rgba(255,122,69,0.12)' }]}>
-            <Text style={[styles.wantText, wanted && { color: c.accent }]}>{wanted ? '✓ On my list' : '+ Want to climb'}</Text>
+            style={[styles.want, wanted && { backgroundColor: c.accent }]}>
+            <Icon name="bookmark" size={18} filled={wanted} color={wanted ? c.accentText : c.text} />
+            <Text style={[styles.wantText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to climb'}</Text>
           </Pressable>
         )}
       </View>
@@ -213,7 +230,6 @@ export function seatsLeft(p: Plan) {
   return Math.max(0, p.size - p.memberIds.length);
 }
 
-/** Date block + peak + crew + seats. Joining is one tap. */
 export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
   const { user, peakById, requestJoin } = useStore();
   const peak = peakById.get(plan.peakId);
@@ -225,16 +241,18 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
   const open = seatsLeft(plan);
 
   return (
-    <Pressable onPress={() => router.push(`/plan/${plan.id}`)} style={({ pressed }) => [styles.plan, pressed && { opacity: 0.85 }]}>
+    <Pressable onPress={() => router.push(`/plan/${plan.id}`)} style={({ pressed }) => [styles.plan, pressed && { backgroundColor: c.backgroundSelected }]}>
       <View style={styles.planDate}>
-        <Text style={styles.planDow}>{dow?.toUpperCase()}</Text>
+        <Text style={styles.planDow}>{dow}</Text>
         <Text style={styles.planDay}>{dnum}</Text>
-        <Text style={styles.planMon}>{mon?.toUpperCase()}</Text>
+        <Text style={styles.planMon}>{mon}</Text>
       </View>
       <View style={{ flex: 1, gap: 4 }}>
-        <Text style={styles.planKicker}>{plan.hostId === ME ? 'YOUR PLAN' : `${host?.name.split(' ')[0].toUpperCase()} IS GOING`} · {plan.start} START</Text>
         <Text style={styles.planPeak} numberOfLines={1}>
           {peak.name}
+        </Text>
+        <Text style={styles.planWho}>
+          {plan.hostId === ME ? 'Your plan' : `${host?.name.split(' ')[0]} is going`}, starts {plan.start.replace(/^0/, '')}
         </Text>
         {!compact && plan.note ? (
           <Text style={styles.planNote} numberOfLines={2}>
@@ -242,13 +260,15 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
           </Text>
         ) : null}
         <View style={styles.planFoot}>
-          <FacePile ids={plan.memberIds} size={24} max={5} />
-          <Text numberOfLines={1} style={[styles.seats, open === 0 && { color: c.textMuted }]}>{open ? `${open} open` : 'Full'}</Text>
+          <FacePile ids={plan.memberIds} size={26} max={5} />
+          <Text numberOfLines={1} style={[styles.seats, open === 0 && { color: c.textSecondary }]}>
+            {open ? `${open} open` : 'Full'}
+          </Text>
           <View style={{ flex: 1 }} />
           {going ? (
-            <Text style={styles.going}>Going ✓</Text>
+            <Text style={styles.going}>Going</Text>
           ) : requested ? (
-            <Text style={styles.requested}>Requested</Text>
+            <Text style={styles.requested}>Asked</Text>
           ) : open > 0 ? (
             <Pressable
               onPress={() => {
@@ -268,42 +288,37 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99, backgroundColor: c.backgroundSelected },
-  chipDot: { width: 7, height: 7, borderRadius: 4 },
-  chipText: { color: c.text, fontFamily: Type.mono, fontSize: 11 },
-  action: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingRight: 6 },
-  kudosIcon: { fontSize: 18 },
-  commentIcon: { fontSize: 16, color: c.textSecondary },
-  actionText: { color: c.textSecondary, fontFamily: Type.mono, fontSize: 13, minWidth: 8 },
-  card: { borderBottomWidth: 1, borderBottomColor: c.border, paddingBottom: Spacing.two, marginBottom: Spacing.two },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: c.backgroundElement },
+  swatch: { width: 9, height: 9 },
+  chipText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13, marginTop: 1 },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingRight: 4 },
+  actionText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 15, minWidth: 8, fontVariant: ['tabular-nums'] },
+  card: { paddingBottom: Spacing.three, marginBottom: Spacing.three, backgroundColor: c.background },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.three, paddingVertical: 12 },
-  who: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
+  who: { color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
   whoWith: { color: c.textSecondary, fontFamily: Type.body },
-  meta: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10, letterSpacing: 0.6, marginTop: 2 },
-  milestone: { color: c.accent, fontFamily: Type.monoBold, fontSize: 10, letterSpacing: 0.8 },
-  mediaFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 110 },
-  mediaText: { position: 'absolute', left: Spacing.three, bottom: 12 },
-  peakName: { color: c.text, fontFamily: Type.display, fontSize: 30, lineHeight: 34 },
-  peakMeta: { color: c.textSecondary, fontFamily: Type.mono, fontSize: 10, letterSpacing: 0.8, marginTop: 2 },
-  burst: { position: 'absolute', alignSelf: 'center', top: 70, fontSize: 80, color: c.accent },
-  cardBody: { paddingHorizontal: Spacing.three, paddingTop: 12, gap: 10 },
-  betaLabel: { color: c.textMuted, fontFamily: Type.monoBold, fontSize: 9.5, letterSpacing: 1.2 },
-  note: { color: c.text, fontFamily: Type.body, fontSize: 15, lineHeight: 22 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.three, paddingTop: 12 },
-  want: { borderWidth: 1, borderColor: c.border, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 },
-  wantText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 12 },
-  plan: { flexDirection: 'row', gap: 14, padding: 14, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
-  planDate: { width: 50, alignItems: 'center', paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
-  planDow: { color: c.accent, fontFamily: Type.monoBold, fontSize: 10, letterSpacing: 1 },
-  planDay: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 30 },
-  planMon: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9, letterSpacing: 1 },
-  planKicker: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9.5, letterSpacing: 0.8 },
-  planPeak: { color: c.text, fontFamily: Type.display, fontSize: 21 },
-  planNote: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, lineHeight: 18 },
-  planFoot: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  seats: { color: c.accent, fontFamily: Type.mono, fontSize: 11 },
-  going: { color: c.success, fontFamily: Type.bodyBold, fontSize: 13 },
-  requested: { color: c.gold, fontFamily: Type.bodyBold, fontSize: 13 },
-  join: { backgroundColor: c.accent, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8 },
-  joinText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 13 },
+  meta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, marginTop: 1 },
+  burst: { position: 'absolute', alignSelf: 'center', top: 56 },
+  cardBody: { paddingHorizontal: Spacing.three, paddingTop: 14, gap: 12 },
+  peakName: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 28, letterSpacing: -0.6 },
+  peakMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, marginTop: 2, fontVariant: ['tabular-nums'] },
+  betaLabel: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 13 },
+  note: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 24 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.three, paddingTop: 4 },
+  want: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, minHeight: 40, backgroundColor: c.backgroundElement },
+  wantText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14, marginTop: 1 },
+  plan: { flexDirection: 'row', gap: 14, padding: 14, backgroundColor: c.backgroundElement },
+  planDate: { width: 52, alignItems: 'center', paddingVertical: 8, backgroundColor: c.background },
+  planDow: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 13 },
+  planDay: { color: c.text, fontFamily: Type.display, fontSize: 28, lineHeight: 32, fontVariant: ['tabular-nums'] },
+  planMon: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
+  planPeak: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
+  planWho: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
+  planNote: { color: c.text, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
+  planFoot: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  seats: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 14 },
+  going: { color: c.success, fontFamily: Type.bodyBold, fontSize: 14 },
+  requested: { color: c.gold, fontFamily: Type.bodyBold, fontSize: 14 },
+  join: { backgroundColor: c.text, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
+  joinText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 1 },
 });

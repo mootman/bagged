@@ -6,7 +6,7 @@ import { PeakPoster } from '@/components/peak-poster';
 import { Field, FriendPicker, Segmented } from '@/components/pickers';
 import { BetaChips } from '@/components/social';
 import { Button } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { success, tap } from '@/lib/haptics';
 import { daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
 
@@ -68,7 +68,7 @@ export default function NewPlanScreen() {
                     setPicking(false);
                   }}>
                   <PeakPoster peak={p} width={88} climbed={id === peakId} />
-                  {myWants.includes(id) && <Text style={styles.wantTag}>ON YOUR LIST</Text>}
+                  {myWants.includes(id) && <Text style={styles.wantTag}>On your list</Text>}
                 </Pressable>
               );
             })}
@@ -78,10 +78,10 @@ export default function NewPlanScreen() {
             <PeakPoster peak={peak} width={64} climbed showTitle={false} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={styles.peakName}>{peak.name}</Text>
-              <Text style={styles.peakMeta}>{peak.elevationFt.toLocaleString()} FT · {peak.range.toUpperCase()}</Text>
+              <Text style={styles.peakMeta}>{peak.elevationFt.toLocaleString()} ft, {peak.range} Range</Text>
               {latest && (
                 <View style={{ gap: 4 }}>
-                  <Text style={styles.latest}>LATEST BETA · {daysSince(latest.date)}D AGO</Text>
+                  <Text style={styles.latest}>Conditions {daysSince(latest.date)} days ago</Text>
                   <BetaChips beta={latest.beta} compact />
                 </View>
               )}
@@ -101,7 +101,7 @@ export default function NewPlanScreen() {
                 setDate(d);
               }}
               style={[styles.day, date === d && styles.dayOn]}>
-              <Text style={[styles.dayText, date === d && { color: c.accentText }]}>{formatPlanDate(d)}</Text>
+              <Text style={[styles.dayText, date === d && { color: c.background }]}>{formatPlanDate(d)}</Text>
             </Pressable>
           ))}
         </View>
@@ -128,7 +128,7 @@ export default function NewPlanScreen() {
         <Segmented options={['Crew only', 'Anyone can ask'] as const} value={visibility === 'crew' ? 'Crew only' : 'Anyone can ask'} onChange={(v) => setVisibility(v === 'Anyone can ask' ? 'public' : 'crew')} />
       </Field>
 
-      <Field label={wantIds.length ? `Invite · ${wantIds.length} friend${wantIds.length > 1 ? 's' : ''} want this peak` : 'Invite'}>
+      <Field label={wantIds.length ? `Invite (${wantIds.length} want this peak)` : 'Invite'}>
         <FriendPicker friends={friends} selected={invites} wantsIds={wantIds} onToggle={(id) => setInvites((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
       </Field>
 
@@ -143,27 +143,27 @@ export default function NewPlanScreen() {
         />
       </Field>
 
-      <Button title={`Post plan · ${formatPlanDate(date)}`} onPress={create} />
+      <Button title={`Post plan for ${formatPlanDate(date)}`} onPress={create} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   page: { padding: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingBottom: Spacing.six },
-  wantTag: { color: c.accent, fontFamily: Type.mono, fontSize: 8, marginTop: 4, letterSpacing: 0.5 },
-  peakRow: { flexDirection: 'row', gap: 14, alignItems: 'center', padding: 12, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
-  peakName: { color: c.text, fontFamily: Type.display, fontSize: 22 },
-  peakMeta: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10 },
-  latest: { color: c.success, fontFamily: Type.monoBold, fontSize: 9, letterSpacing: 1, marginTop: 4 },
-  change: { color: c.link, fontFamily: Type.bodyMedium, fontSize: 13 },
+  wantTag: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 11, marginTop: 4 },
+  peakRow: { flexDirection: 'row', gap: 14, alignItems: 'center', padding: 12, backgroundColor: c.backgroundElement },
+  peakName: { color: c.text, fontFamily: Type.display, fontSize: 22, letterSpacing: -0.4 },
+  peakMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
+  latest: { color: c.success, fontFamily: Type.bodyBold, fontSize: 13, marginTop: 4 },
+  change: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 14 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  day: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 12, borderWidth: 1, borderColor: c.border, backgroundColor: c.backgroundElement },
-  dayOn: { backgroundColor: c.accent, borderColor: c.accent },
-  dayText: { color: c.text, fontFamily: Type.mono, fontSize: 12 },
+  day: { paddingHorizontal: 13, minHeight: 40, justifyContent: 'center', backgroundColor: c.backgroundElement },
+  dayOn: { backgroundColor: c.text },
+  dayText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14, marginTop: 2 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  stepBtn: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  stepText: { color: c.text, fontSize: 22 },
-  stepVal: { color: c.text, fontFamily: Type.display, fontSize: 30, minWidth: 24, textAlign: 'center' },
-  stepHint: { color: c.textMuted, fontFamily: Type.mono, fontSize: 11, flex: 1 },
-  note: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 14, padding: 14, minHeight: 90, fontFamily: Type.body, fontSize: 15, textAlignVertical: 'top', borderWidth: 1, borderColor: c.border },
+  stepBtn: { width: 44, height: 44, backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center' },
+  stepText: { color: c.text, fontSize: 22, fontFamily: Type.bodyBold },
+  stepVal: { color: c.text, fontFamily: Type.display, fontSize: 30, minWidth: 24, textAlign: 'center', fontVariant: ['tabular-nums'] },
+  stepHint: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, flex: 1 },
+  note: { backgroundColor: c.backgroundElement, color: c.text, padding: 14, minHeight: 90, fontFamily: Type.body, fontSize: 16, textAlignVertical: 'top' },
 });

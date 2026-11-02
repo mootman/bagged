@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Terrain3D } from '@/components/terrain-3d';
 import { TimeSlider } from '@/components/time-slider';
+import { Icon } from '@/components/icon';
 import { Avatar, BetaChips, FacePile, PlanCard } from '@/components/social';
-import { Body, Button, Display, Label, SectionHeader } from '@/components/ui';
-import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { Body, Button, Display, SectionHeader } from '@/components/ui';
+import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 import { daysSince, formatDate, ME, useStore } from '@/lib/store';
 import { heightmap } from '@/lib/terrain';
@@ -28,10 +29,6 @@ const HARD = new Set([
 function names(us: { name: string }[]) {
   const first = us.slice(0, 2).map((u) => u.name.split(' ')[0]);
   return us.length > 2 ? `${first.join(', ')} and ${us.length - 2} more` : first.join(' and ');
-}
-
-function dms(v: number, pos: string, neg: string) {
-  return `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
 }
 
 export default function PeakScreen() {
@@ -66,15 +63,15 @@ export default function PeakScreen() {
             <Terrain3D peakId={peak.id} time={time} height={430} />
           </View>
           <View style={styles.hint} pointerEvents="none">
-            <Text style={styles.hintText}>DRAG TO TURN THE MOUNTAIN</Text>
+            <Text style={styles.hintText}>Drag to turn it</Text>
           </View>
 
           <View style={styles.body}>
             <View style={{ gap: 6 }}>
-              <Label color={mine.length ? c.accent : undefined}>
-                {mine.length ? `Signed ${mine.length}×` : `${peak.range} Range`}  ·  {dms(peak.lat, 'N', 'S')}  {dms(peak.lon, 'E', 'W')}
-              </Label>
               <Display size={44}>{peak.name}</Display>
+              <Text style={styles.sub}>
+                {peak.range} Range{mine.length ? <Text style={{ color: c.accent, fontFamily: Type.bodyBold }}>, climbed {mine.length === 1 ? 'once' : `${mine.length} times`}</Text> : null}
+              </Text>
             </View>
 
             <TimeSlider value={time} onChange={setTime} />
@@ -88,22 +85,24 @@ export default function PeakScreen() {
             {/* What it's like up there right now. The reason to open this page mid-week. */}
             <View style={styles.betaCard}>
               <View style={styles.betaHead}>
-                <Text style={[styles.betaKicker, latest && daysSince(latest.date) <= 7 ? { color: c.success } : null]}>
-                  {latest ? (daysSince(latest.date) <= 7 ? '● FRESH BETA' : 'LATEST BETA') : 'NO RECENT BETA'}
-                </Text>
-                {latest && <Text style={styles.betaAgo}>{daysSince(latest.date) === 0 ? 'TODAY' : `${daysSince(latest.date)}D AGO`} · {reports.length} REPORT{reports.length === 1 ? '' : 'S'} / 45D</Text>}
+                <Text style={styles.betaKicker}>Conditions</Text>
+                {latest && (
+                  <Text style={[styles.betaAgo, daysSince(latest.date) <= 7 && { color: c.success }]}>
+                    {daysSince(latest.date) === 0 ? 'Today' : daysSince(latest.date) === 1 ? 'Yesterday' : `${daysSince(latest.date)} days ago`}
+                  </Text>
+                )}
               </View>
               {latest ? (
                 <Pressable onPress={() => router.push(`/ascent/${latest.id}`)} style={{ gap: 10 }}>
                   <BetaChips beta={latest.beta} />
                   {latest.note ? (
                     <Text style={styles.betaNote} numberOfLines={3}>
-                      “{latest.note}”
+                      {latest.note}
                     </Text>
                   ) : null}
                   <View style={styles.betaBy}>
                     <Avatar user={user(latest.userId)} size={22} />
-                    <Text style={styles.betaByText}>{latest.userId === ME ? 'You' : user(latest.userId)?.name}{latest.beta?.route ? ` · ${latest.beta.route}` : ''}</Text>
+                    <Text style={styles.betaByText}>{latest.userId === ME ? 'You' : user(latest.userId)?.name}{latest.beta?.route ? `, ${latest.beta.route}` : ''}{reports.length > 1 ? `. ${reports.length - 1} more reports below.` : ''}</Text>
                   </View>
                 </Pressable>
               ) : (
@@ -140,7 +139,8 @@ export default function PeakScreen() {
                   toggleWant(peak.id);
                 }}
                 style={[styles.pill, wanted && styles.pillOn]}>
-                <Text style={[styles.pillText, wanted && { color: c.accent }]}>{wanted ? '✓ Want to climb' : '+ Want to climb'}</Text>
+                <Icon name="bookmark" size={18} filled={wanted} color={wanted ? c.accentText : c.text} />
+                <Text style={[styles.pillText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to climb'}</Text>
               </Pressable>
               <Pressable onPress={() => router.push({ pathname: '/log/new', params: { peakId: peak.id } })} style={styles.pill}>
                 <Text style={styles.pillText}>{mine.length ? 'Log it again' : 'I climbed this'}</Text>
@@ -152,8 +152,8 @@ export default function PeakScreen() {
                 }}
                 disabled={favFull}
                 accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to four favorites'}
-                style={[styles.fav, { opacity: favFull ? 0.35 : 1, borderColor: isFav ? c.accent : c.border, backgroundColor: isFav ? 'rgba(255,122,69,0.12)' : 'transparent' }]}>
-                <Text style={{ fontSize: 18, color: isFav ? c.accent : c.textSecondary }}>{isFav ? '♥' : '♡'}</Text>
+                style={[styles.fav, { opacity: favFull ? 0.35 : 1 }]}>
+                <Icon name="heart" size={20} filled={isFav} color={isFav ? c.accent : c.text} />
               </Pressable>
             </View>
 
@@ -174,7 +174,7 @@ export default function PeakScreen() {
                     <View style={styles.betaBy}>
                       <Avatar user={user(r.userId)} size={22} />
                       <Text style={[styles.betaByText, { flex: 1 }]}>{r.userId === ME ? 'You' : user(r.userId)?.name}</Text>
-                      <Text style={styles.betaAgo}>{daysSince(r.date)}D AGO</Text>
+                      <Text style={styles.betaAgo}>{daysSince(r.date)} days ago</Text>
                     </View>
                     <BetaChips beta={r.beta} compact />
                   </Pressable>
@@ -182,8 +182,8 @@ export default function PeakScreen() {
               </>
             )}
 
-            <View style={[styles.route, hard && { borderColor: 'rgba(255,122,69,0.4)' }]}>
-              <Text style={[styles.routeTag, { color: hard ? c.accent : c.success }]}>{hard ? 'SCRAMBLE' : 'HIKE'}</Text>
+            <View style={[styles.route, hard && { borderLeftColor: c.danger }]}>
+              <Text style={[styles.routeTag, { color: hard ? c.danger : c.success }]}>{hard ? 'Scramble' : 'Hike'}</Text>
               <Body muted style={{ flex: 1 }}>
                 {hard
                   ? 'The standard route has scrambling and real exposure. Check conditions, start early, turn around if weather builds.'
@@ -192,7 +192,7 @@ export default function PeakScreen() {
             </View>
 
             <Pressable onPress={() => Linking.openURL(`https://www.14ers.com/search?q=${encodeURIComponent(peak.name)}`)}>
-              <Text style={{ color: c.link, fontFamily: Type.bodyMedium }}>Route descriptions on 14ers.com  →</Text>
+              <Text style={styles.extLink}>Route descriptions on 14ers.com</Text>
             </Pressable>
 
             {mine.length > 0 && (
@@ -208,7 +208,7 @@ export default function PeakScreen() {
                 ))}
               </>
             )}
-            <Text style={styles.credit}>Terrain: AWS Terrain Tiles (USGS 3DEP, SRTM). 5 km around the summit, 1.35× vertical.</Text>
+            <Text style={styles.credit}>Terrain from USGS 3DEP and SRTM via AWS Terrain Tiles, 5 km around the summit, height exaggerated 1.35 times.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -219,37 +219,39 @@ export default function PeakScreen() {
 function Fact({ value, unit, label }: { value: string; unit?: string; label: string }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text style={{ color: c.text, fontSize: 26, fontFamily: Type.display }}>
+      <Text style={{ color: c.text, fontSize: 26, fontFamily: Type.display, letterSpacing: -0.6, fontVariant: ['tabular-nums'] }}>
         {value}
-        {unit ? <Text style={{ fontSize: 13, fontFamily: Type.mono, color: c.textSecondary }}> {unit}</Text> : null}
+        {unit ? <Text style={{ fontSize: 16, fontFamily: Type.bodyMedium, color: c.textSecondary }}> {unit}</Text> : null}
       </Text>
-      <Text style={{ color: c.textMuted, fontSize: 10, fontFamily: Type.mono, letterSpacing: 1, textTransform: 'uppercase' }}>{label}</Text>
+      <Text style={{ color: c.textSecondary, fontSize: 13, fontFamily: Type.body }}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   body: { paddingHorizontal: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', marginTop: Spacing.one },
+  sub: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
   hint: { position: 'absolute', top: 398, left: 0, right: 0, alignItems: 'center' },
-  hintText: { color: 'rgba(237,230,214,0.45)', fontFamily: Type.mono, fontSize: 9, letterSpacing: 1.5 },
-  facts: { flexDirection: 'row', gap: Spacing.three, paddingVertical: Spacing.three, borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.border },
-  actions: { flexDirection: 'row', gap: Spacing.two },
-  fav: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  route: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.sm, borderWidth: 1, borderColor: c.border, alignItems: 'flex-start' },
-  routeTag: { fontFamily: Type.monoBold, fontSize: 11, letterSpacing: 1, marginTop: 3 },
-  betaCard: { gap: 12, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderWidth: 1, borderColor: c.border },
-  betaHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  betaKicker: { color: c.textMuted, fontFamily: Type.monoBold, fontSize: 10.5, letterSpacing: 1.2 },
-  betaAgo: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9.5 },
-  betaNote: { color: c.text, fontFamily: Type.displayItalic, fontSize: 17, lineHeight: 24 },
+  hintText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
+  facts: { flexDirection: 'row', gap: Spacing.three },
+  actions: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
+  fav: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: c.backgroundElement },
+  route: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.three, backgroundColor: c.backgroundElement, borderLeftWidth: 4, borderLeftColor: c.success, alignItems: 'flex-start' },
+  routeTag: { fontFamily: Type.bodyBold, fontSize: 15, marginTop: 1 },
+  betaCard: { gap: 12, padding: Spacing.three, backgroundColor: c.backgroundElement },
+  betaHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  betaKicker: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
+  betaAgo: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 14 },
+  betaNote: { color: c.text, fontFamily: Type.body, fontSize: 17, lineHeight: 25 },
   betaBy: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  betaByText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
+  betaByText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, flexShrink: 1 },
   socialRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  socialText: { flex: 1, color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
-  pill: { paddingHorizontal: 16, height: 46, borderRadius: 23, borderWidth: 1, borderColor: c.border, justifyContent: 'center' },
-  pillOn: { borderColor: c.accent, backgroundColor: 'rgba(255,122,69,0.1)' },
-  pillText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14 },
-  report: { gap: 8, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
-  climb: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border, gap: 2 },
-  credit: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9, letterSpacing: 0.3, marginTop: Spacing.four },
+  socialText: { flex: 1, color: c.textSecondary, fontFamily: Type.body, fontSize: 15, lineHeight: 22 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 46, backgroundColor: c.backgroundElement },
+  pillOn: { backgroundColor: c.accent },
+  pillText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 2 },
+  report: { gap: 8, paddingVertical: 12 },
+  climb: { paddingVertical: 10, gap: 2 },
+  extLink: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15, textDecorationLine: 'underline' },
+  credit: { color: c.textSecondary, fontFamily: Type.body, fontSize: 12, marginTop: Spacing.four },
 });

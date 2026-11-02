@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import Svg, { Circle, G, Line, Polygon, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { G, Line, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 
 import type { Peak } from '@/lib/types';
 
@@ -73,14 +73,13 @@ export function PassportMap({
         const lit = summited.has(p.id);
         return (
           <G key={p.id}>
-            {lit && <Circle cx={x} cy={y} r={9 * s} fill={colors.accent} opacity={0.18} />}
             <Polygon points={tri(x, y, (lit ? 6.5 : 5) * s)} fill={lit ? colors.accent : colors.unclimbed} />
           </G>
         );
       })}
       {showFrame && (
         <SvgText x={width - 10} y={layout.height - 10} fontSize={10 * s} fill={colors.text} opacity={0.5} textAnchor="end">
-          COLORADO 14ERS
+          Colorado fourteeners
         </SvgText>
       )}
     </Svg>

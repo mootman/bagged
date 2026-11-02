@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
 import { Colors, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
@@ -20,7 +21,7 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
               onChange(on ? undefined : o);
             }}
             style={[styles.segItem, on && styles.segOn]}>
-            <Text style={[styles.segText, on && { color: c.accentText }]}>{o}</Text>
+            <Text style={[styles.segText, on && { color: c.background }]}>{o}</Text>
           </Pressable>
         );
       })}
@@ -73,13 +74,13 @@ export function FriendPicker({ friends, selected, onToggle, wantsIds = [] }: { f
               tap();
               onToggle(f.id);
             }}
-            style={[styles.friend, on && { borderColor: c.accent, backgroundColor: 'rgba(255,122,69,0.08)' }]}>
+            style={[styles.friend, on && { backgroundColor: c.backgroundSelected }]}>
             <Avatar user={f} size={32} />
             <View style={{ flex: 1 }}>
               <Text style={styles.friendName}>{f.name}</Text>
-              {wantsIds.includes(f.id) && <Text style={styles.wants}>WANTS THIS PEAK</Text>}
+              {wantsIds.includes(f.id) && <Text style={styles.wants}>Wants this peak</Text>}
             </View>
-            <View style={[styles.check, on && { backgroundColor: c.accent, borderColor: c.accent }]}>{on && <Text style={{ color: c.accentText, fontSize: 13 }}>✓</Text>}</View>
+            <View style={[styles.check, on && { backgroundColor: c.accent, borderColor: c.accent }]}>{on && <Icon name="check" size={14} color={c.accentText} weight={2.4} />}</View>
           </Pressable>
         );
       })}
@@ -90,7 +91,7 @@ export function FriendPicker({ friends, selected, onToggle, wantsIds = [] }: { f
 export function Field({ label, children, style }: { label: string; children: React.ReactNode; style?: object }) {
   return (
     <View style={[{ gap: 7 }, style]}>
-      <Text style={styles.label}>{label.toUpperCase()}</Text>
+      <Text style={styles.label}>{label}</Text>
       {children}
     </View>
   );
@@ -98,13 +99,13 @@ export function Field({ label, children, style }: { label: string; children: Rea
 
 const styles = StyleSheet.create({
   seg: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  segItem: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 99, borderWidth: 1, borderColor: c.border, backgroundColor: c.backgroundElement },
-  segOn: { backgroundColor: c.accent, borderColor: c.accent },
-  segText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13 },
-  label: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10, letterSpacing: 1 },
-  input: { backgroundColor: c.backgroundElement, color: c.text, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontFamily: Type.mono, fontSize: 14, borderWidth: 1, borderColor: c.border },
-  friend: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 14, borderWidth: 1, borderColor: c.border },
+  segItem: { paddingHorizontal: 13, minHeight: 40, justifyContent: 'center', backgroundColor: c.backgroundElement },
+  segOn: { backgroundColor: c.text },
+  segText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14, marginTop: 2 },
+  label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
+  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 46, fontFamily: Type.bodyMedium, fontSize: 15, fontVariant: ['tabular-nums'] },
+  friend: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, backgroundColor: c.backgroundElement },
   friendName: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 15 },
-  wants: { color: c.accent, fontFamily: Type.mono, fontSize: 9, letterSpacing: 0.8, marginTop: 2 },
-  check: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
+  wants: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 13, marginTop: 1 },
+  check: { width: 24, height: 24, borderWidth: 2, borderColor: c.line, alignItems: 'center', justifyContent: 'center' },
 });

@@ -4,17 +4,18 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 
 import { PeakPoster } from '@/components/peak-poster';
 import { RidgelineArt } from '@/components/ridgeline-art';
+import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
 import { Tilt } from '@/components/tilt';
 import { SectionHeader } from '@/components/ui';
-import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
+import { BottomTabInset, Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { ME, useStore } from '@/lib/store';
 import type { Ascent } from '@/lib/types';
 import { useCountUp } from '@/lib/use-count-up';
 
 const c = Colors.dark;
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Anyone's mountain life: hero, list progress, the range, favorites, want list, diary. */
 export function Passport({ userId, topRight, footer }: { userId: string; topRight?: ReactNode; footer?: ReactNode }) {
@@ -47,13 +48,13 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}>
       <View style={{ height: 420 }}>
-        {hero && <RidgelineArt peakId={hero.id} lit={list.length > 0} width={width} height={420} count={38} top={0.16} bottom={0.84} amplitude={0.24} reveal />}
+        {hero && <RidgelineArt peakId={hero.id} lit={list.length > 0} width={width} height={420} count={38} top={0.1} bottom={0.72} amplitude={0.24} reveal />}
         {topRight && <View style={styles.topRight}>{topRight}</View>}
         <View style={styles.heroBottom}>
           <View style={styles.idRow}>
             <Avatar user={u} size={44} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.handle}>@{u.handle || 'you'} · {u.home ? u.home.toUpperCase() : 'COLORADO'}</Text>
+              <Text style={styles.handle}>@{u.handle || 'you'}{u.home ? `, ${u.home}` : ''}</Text>
             </View>
           </View>
           <Text style={styles.heroName}>{isMe ? u.name || 'You' : u.name}</Text>
@@ -84,7 +85,7 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
             )}
             {common && common.want.length > 0 && (
               <Pressable onPress={() => router.push({ pathname: '/plan/new', params: { peakId: common.want[0], invite: userId } })} style={styles.planTogether}>
-                <Text style={styles.planTogetherText}>Plan {peakById.get(common.want[0])?.name} together →</Text>
+                <Text style={styles.planTogetherText}>Plan {peakById.get(common.want[0])?.name} together</Text>
               </Pressable>
             )}
           </View>
@@ -93,13 +94,12 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
         <View style={styles.bigCount}>
           <Text style={styles.bigNum}>{shownCount}</Text>
           <View style={{ paddingBottom: 12 }}>
-            <Text style={styles.bigOf}>of {peaks.length}</Text>
-            <Text style={styles.bigLabel}>COLORADO 14ERS</Text>
+            <Text style={styles.bigOf}>of {peaks.length} Colorado fourteeners</Text>
           </View>
         </View>
         <View style={styles.segments}>
           {range.map((p) => (
-            <View key={p.id} style={[styles.seg, { backgroundColor: done.has(p.id) ? c.accent : 'rgba(237,230,214,0.1)' }]} />
+            <View key={p.id} style={[styles.seg, { backgroundColor: done.has(p.id) ? c.accent : c.backgroundSelected }]} />
           ))}
         </View>
         <View style={styles.statsRow}>
@@ -115,11 +115,11 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
           const lit = done.has(p.id);
           return (
             <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)} style={{ alignItems: 'center', gap: 6 }}>
-              <View style={[styles.rangeTile, lit && { borderColor: 'rgba(255,122,69,0.5)' }]}>
-                <RidgelineArt peakId={p.id} lit={lit} width={62} height={96} count={11} top={0.25} bottom={0.95} amplitude={0.35} sun={false} />
+              <View style={[styles.rangeTile, lit && { backgroundColor: '#F6F7F3' }]}>
+                <RidgelineArt peakId={p.id} lit={lit} width={62} height={96} count={11} top={0.25} bottom={0.95} amplitude={0.35} paper={lit ? '#F6F7F3' : c.backgroundElement} marker={false} />
               </View>
               <Text numberOfLines={1} style={[styles.rangeLabel, lit && { color: c.accent }]}>
-                {p.name.replace(/^Mount /, 'Mt ').replace(/ Peak$/, '').toUpperCase()}
+                {p.name.replace(/^Mount /, 'Mt. ').replace(/ Peak$/, '').replace(/ Mountain$/, '')}
               </Text>
             </Pressable>
           );
@@ -138,7 +138,7 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
                 </Tilt>
               ) : (
                 <Pressable key={i} onPress={() => isMe && router.push('/peaks')} style={[styles.emptyFav, { width: favW, height: favW * 1.5 }]}>
-                  <Text style={{ color: c.textMuted, fontFamily: Type.display, fontSize: 26 }}>{isMe ? '+' : ''}</Text>
+                  {isMe ? <Icon name="plus" size={24} color={c.textSecondary} /> : null}
                 </Pressable>
               );
             })}
@@ -147,7 +147,7 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
 
         {wants.length > 0 && (
           <>
-            <SectionHeader title={isMe ? 'Your want-to-climb list' : 'Wants to climb'} />
+            <SectionHeader title={isMe ? 'Want to climb' : 'Wants to climb'} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two }}>
               {wants.map((pid) => {
                 const p = peakById.get(pid);
@@ -181,7 +181,7 @@ function Mini({ value, label }: { value: string; label: string }) {
   return (
     <View style={{ flex: 1 }}>
       <Text style={{ color: c.text, fontFamily: Type.display, fontSize: 28 }}>{value}</Text>
-      <Text style={{ color: c.textMuted, fontFamily: Type.mono, fontSize: 10, letterSpacing: 1 }}>{label.toUpperCase()}</Text>
+      <Text style={{ color: c.textSecondary, fontFamily: Type.body, fontSize: 13 }}>{label}</Text>
     </View>
   );
 }
@@ -202,9 +202,8 @@ function DiaryRow({ log }: { log: Ascent }) {
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={styles.diaryName}>{peak.name}</Text>
         <Text style={styles.diaryMeta} numberOfLines={1}>
-          {peak.elevationFt.toLocaleString()} FT
-          {names.length ? `  ·  ${names.join(', ')}` : ''}
-          {log.kudos.length ? `  ·  ▲${log.kudos.length}` : ''}
+          {peak.elevationFt.toLocaleString()} ft
+          {names.length ? `, with ${names.join(' and ')}` : ''}
         </Text>
       </View>
     </Pressable>
@@ -214,32 +213,32 @@ function DiaryRow({ log }: { log: Ascent }) {
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
   topRight: { position: 'absolute', top: 54, right: Spacing.three },
-  heroBottom: { position: 'absolute', left: Spacing.three, right: Spacing.three, bottom: Spacing.two, gap: 6 },
+  heroBottom: { position: 'absolute', left: Spacing.three, right: Spacing.three, bottom: Spacing.two, gap: 8 },
   idRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  handle: { color: c.textSecondary, fontFamily: Type.mono, fontSize: 11, letterSpacing: 0.6 },
-  heroName: { color: c.text, fontFamily: Type.display, fontSize: 50, lineHeight: 54, letterSpacing: -1 },
-  followBtn: { backgroundColor: c.accent, borderRadius: 99, paddingVertical: 12, alignItems: 'center' },
-  following: { backgroundColor: 'transparent', borderWidth: 1, borderColor: c.border },
-  followText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 15 },
-  common: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
+  handle: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 15 },
+  heroName: { color: c.text, fontFamily: Type.display, fontSize: 48, lineHeight: 50, letterSpacing: -1.6 },
+  followBtn: { backgroundColor: c.accent, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  following: { backgroundColor: c.backgroundElement },
+  followText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 16, marginTop: 2 },
+  common: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   planTogether: { alignSelf: 'flex-start' },
-  planTogetherText: { color: c.link, fontFamily: Type.bodyMedium, fontSize: 14 },
-  bigCount: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: Spacing.two },
-  bigNum: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 88, lineHeight: 92, letterSpacing: -3 },
-  bigOf: { color: c.text, fontFamily: Type.displayItalic, fontSize: 24 },
-  bigLabel: { color: c.textMuted, fontFamily: Type.mono, fontSize: 10, letterSpacing: 1.4 },
+  planTogetherText: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 16, textDecorationLine: 'underline' },
+  bigCount: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: Spacing.three },
+  bigNum: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 96, lineHeight: 96, letterSpacing: -4, fontVariant: ['tabular-nums'] },
+  bigOf: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 16, lineHeight: 20, maxWidth: 150, paddingBottom: 14 },
+  bigLabel: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
   segments: { flexDirection: 'row', gap: 2 },
-  seg: { flex: 1, height: 10, borderRadius: 1.5 },
-  statsRow: { flexDirection: 'row', paddingVertical: Spacing.three, borderBottomWidth: 1, borderColor: c.border, marginTop: Spacing.one },
-  rangeTile: { width: 62, height: 96, borderRadius: Radius.xs, overflow: 'hidden', borderWidth: 1, borderColor: c.border },
-  rangeLabel: { width: 62, color: c.textMuted, fontFamily: Type.mono, fontSize: 7.5, textAlign: 'center', letterSpacing: 0.3 },
+  seg: { flex: 1, height: 12 },
+  statsRow: { flexDirection: 'row', paddingVertical: Spacing.two, marginTop: Spacing.one },
+  rangeTile: { width: 62, height: 96, overflow: 'hidden', backgroundColor: c.backgroundElement },
+  rangeLabel: { width: 62, color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 10, textAlign: 'center' },
   favs: { flexDirection: 'row', gap: Spacing.two },
-  emptyFav: { borderRadius: Radius.xs, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
-  year: { color: c.text, fontFamily: Type.displayItalic, fontSize: 28, marginTop: Spacing.two, marginBottom: 2 },
-  diaryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
+  emptyFav: { backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center' },
+  year: { color: c.text, fontFamily: Type.display, fontSize: 26, letterSpacing: -0.6, marginTop: Spacing.three, marginBottom: 4 },
+  diaryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: 10 },
   diaryDate: { width: 36, alignItems: 'center' },
-  diaryMonth: { color: c.textMuted, fontFamily: Type.mono, fontSize: 9, letterSpacing: 1 },
-  diaryDay: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 28 },
-  diaryName: { color: c.text, fontFamily: Type.display, fontSize: 18 },
-  diaryMeta: { color: c.textSecondary, fontFamily: Type.mono, fontSize: 10.5, letterSpacing: 0.3 },
+  diaryMonth: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 12 },
+  diaryDay: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 28, fontVariant: ['tabular-nums'] },
+  diaryName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 17 },
+  diaryMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
 });

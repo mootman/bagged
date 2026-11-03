@@ -13,13 +13,15 @@ const PATHS = {
   arrow: 'M5 12 H19 M13.5 6.5 L19 12 L13.5 17.5',
   snow: 'M12 3 V21 M4.2 7.5 L19.8 16.5 M4.2 16.5 L19.8 7.5 M9.5 4.5 L12 7 L14.5 4.5 M9.5 19.5 L12 17 L14.5 19.5',
   camera: 'M4 8 H8 L9.5 5.5 H14.5 L16 8 H20 V19 H4 Z M12 16.5 A3.2 3.2 0 1 0 12 10.1 A3.2 3.2 0 1 0 12 16.5 Z',
+  bell: 'M6 16.5 V11 A6 6 0 0 1 18 11 V16.5 L19.5 18.5 H4.5 Z M10 21 H14',
+  crown: 'M4 18.5 L3 7.5 L8.2 11.2 L12 5 L15.8 11.2 L21 7.5 L20 18.5 Z',
   person: 'M12 12 A4 4 0 1 0 12 4 A4 4 0 1 0 12 12 Z M4.5 20.5 C5.5 16.5 8.5 14.5 12 14.5 C15.5 14.5 18.5 16.5 19.5 20.5',
 } as const;
 
 export type IconName = keyof typeof PATHS;
 
 export function Icon({ name, size = 22, color = Colors.dark.text, filled = false, weight = 1.8 }: { name: IconName; size?: number; color?: string; filled?: boolean; weight?: number }) {
-  const closed = name === 'summit' || name === 'comment' || name === 'bookmark' || name === 'heart';
+  const closed = name === 'summit' || name === 'comment' || name === 'bookmark' || name === 'heart' || name === 'bell' || name === 'crown';
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path

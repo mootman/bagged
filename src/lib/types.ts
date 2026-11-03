@@ -130,3 +130,25 @@ export type Plan = {
   createdAt: number;
   done?: boolean;
 };
+
+/** A question about a peak, Nextdoor-style. People who climbed it lately are asked to answer. */
+export type Question = {
+  id: string;
+  peakId: string;
+  userId: string;
+  text: string;
+  at: number;
+  answers: { id: string; userId: string; text: string; at: number }[];
+};
+
+/** Something that happened that you'd want to hear about. */
+export type Notif = {
+  id: string;
+  kind: 'kudos' | 'comment' | 'follow' | 'answer' | 'question' | 'want-climbed' | 'conditions' | 'badge' | 'legend';
+  at: number;
+  userId?: string;
+  peakId?: string;
+  ascentId?: string;
+  questionId?: string;
+  text?: string;
+};

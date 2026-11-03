@@ -51,6 +51,10 @@ export default function RootLayout() {
             <Stack.Screen name="plans" options={{ title: 'Plans' }} />
             <Stack.Screen name="backfill" options={{ title: 'Peaks you\'ve climbed' }} />
             <Stack.Screen name="stats" options={{ title: 'Your stats' }} />
+            <Stack.Screen name="activity" options={{ title: 'Activity' }} />
+            <Stack.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
+            <Stack.Screen name="badges" options={{ title: 'Badges' }} />
+            <Stack.Screen name="list/[id]" options={{ title: '' }} />
             <Stack.Screen name="credits" options={{ title: 'Photo credits' }} />
             <Stack.Screen name="signed/[id]" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
           </Stack>

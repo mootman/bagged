@@ -5,7 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { CO_14ERS } from '@/data/co14ers';
 
 import { buildDemo } from './social/seed';
-import type { Ascent, Beta, Peak, Plan, User } from './types';
+import { effort } from './stats';
+import type { Ascent, Beta, Notif, Peak, Plan, Question, User } from './types';
 
 const KEY = 'register:v3';
 const LEGACY_KEY = 'bagged:v1';
@@ -18,6 +19,10 @@ type State = {
   ascents: Ascent[];
   plans: Plan[];
   dismissed: string[];
+  questions: Question[];
+  notes: Notif[];
+  /** Everything before this has been seen in the activity inbox. */
+  notesSeenAt: number;
   /** True while running on the seeded demo crew instead of a real backend. */
   demo: boolean;
 };
@@ -34,6 +39,9 @@ function initialState(): State {
     ascents: d.ascents,
     plans: d.plans,
     dismissed: [],
+    questions: d.questions,
+    notes: [],
+    notesSeenAt: Date.now(),
     demo: true,
   };
 }
@@ -109,6 +117,19 @@ type Store = State & {
   approve: (planId: string, userId: string) => void;
   completePlan: (planId: string, extra: { note?: string; beta?: Beta }) => Ascent | null;
   dismissCandidate: (key: string) => void;
+
+  /** Inbox: stored events plus live ones (someone climbed a peak on your list, new conditions). */
+  activity: () => Notif[];
+  unread: number;
+  markSeen: () => void;
+  /** Most ascents of a peak in the last 12 months. Ties go to whoever got there first. */
+  legend: (peakId: string) => { board: { userId: string; count: number }[]; mine: number };
+  /** Feet climbed in the last 30 days. */
+  leaderboard: (scope: 'everyone' | 'friends') => { userId: string; feet: number; ascents: number }[];
+  questionsFor: (peakId: string) => Question[];
+  ask: (peakId: string, text: string) => void;
+  answer: (questionId: string, text: string) => void;
+  notify: (n: Omit<Notif, 'id'>) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -160,6 +181,8 @@ const today = () => {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(initialState);
   const [ready, setReady] = useState(false);
+  // "Now" for windows like the last two weeks. Fixed per launch, which is plenty for these.
+  const [now] = useState(() => Date.now());
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -265,18 +288,61 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return created.filter((c) => c.userId === ME);
   }, []);
 
+  const notify = useCallback((n: Omit<Notif, 'id'>) => setState((s) => ({ ...s, notes: [{ ...n, id: randomUUID() }, ...s.notes].slice(0, 200) })), []);
+
   const logAscent = useCallback(
     (a: NewAscent) => {
       const [mine] = addLogs([a]);
-      // Demo: friends notice. Kudos roll in over the next few seconds.
-      const fans = state.following.slice(0, 3);
-      fans.forEach((uid, i) =>
-        later(2500 + i * 1800, (s) => ({ ...s, ascents: s.ascents.map((x) => (x.id === mine.id && !x.kudos.includes(uid) ? { ...x, kudos: [...x.kudos, uid] } : x)) })),
+      // Demo: the community notices. Friends first, then other climbers. Each reaction is a notification.
+      const pool = [...state.following, ...Object.keys(state.users).filter((u) => u !== ME && !state.following.includes(u))];
+      pool.slice(0, 4).forEach((uid, i) =>
+        later(2500 + i * 2200, (s) => ({
+          ...s,
+          ascents: s.ascents.map((x) => (x.id === mine.id && !x.kudos.includes(uid) ? { ...x, kudos: [...x.kudos, uid] } : x)),
+          notes: [{ id: randomUUID(), kind: 'kudos' as const, at: Date.now(), userId: uid, ascentId: mine.id, peakId: mine.peakId }, ...s.notes],
+        })),
       );
+      if (pool[1] && a.note) {
+        const text = 'Nice one. How was the trail above treeline?';
+        later(9000, (s) => ({
+          ...s,
+          ascents: s.ascents.map((x) => (x.id === mine.id ? { ...x, comments: [...x.comments, { id: randomUUID(), userId: pool[1], text, at: Date.now() }] } : x)),
+          notes: [{ id: randomUUID(), kind: 'comment' as const, at: Date.now(), userId: pool[1], ascentId: mine.id, peakId: mine.peakId, text }, ...s.notes],
+        }));
+      }
       return mine;
     },
-    [addLogs, later, state.following],
+    [addLogs, later, state.following, state.users],
   );
+
+  const ask = useCallback(
+    (peakId: string, text: string) => {
+      const q: Question = { id: randomUUID(), peakId, userId: ME, text: text.trim(), at: Date.now(), answers: [] };
+      if (!q.text) return;
+      setState((s) => ({ ...s, questions: [q, ...s.questions] }));
+      // Demo: someone who climbed it lately answers.
+      const recent = state.ascents.filter((x) => x.peakId === peakId && x.userId !== ME).sort(sortByDate)[0];
+      const who = recent?.userId ?? 'u_jess';
+      const b = recent?.beta;
+      const reply = b?.surface
+        ? `I was up there ${recent.date ? `on ${formatDate(recent.date)}` : 'recently'}. ${b.surface === 'Dry' ? 'Dry the whole way.' : `${b.surface} above treeline${b.traction && b.traction !== 'None' ? `, brought ${b.traction.toLowerCase()}` : ''}.`} Start early either way.`
+        : 'Went a few weeks back. The trail is easy to follow, just be off the top before the afternoon clouds build.';
+      later(5000, (s) => ({
+        ...s,
+        questions: s.questions.map((x) => (x.id === q.id ? { ...x, answers: [...x.answers, { id: randomUUID(), userId: who, text: reply, at: Date.now() }] } : x)),
+        notes: [{ id: randomUUID(), kind: 'answer' as const, at: Date.now(), userId: who, peakId, questionId: q.id, text: reply }, ...s.notes],
+      }));
+    },
+    [later, state.ascents],
+  );
+
+  const answer = useCallback((questionId: string, text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setState((s) => ({ ...s, questions: s.questions.map((q) => (q.id === questionId ? { ...q, answers: [...q.answers, { id: randomUUID(), userId: ME, text: t, at: Date.now() }] } : q)) }));
+  }, []);
+
+  const markSeen = useCallback(() => setState((s) => ({ ...s, notesSeenAt: Date.now() })), []);
 
   const updateAscent = useCallback((id: string, patch: Partial<Ascent>) => {
     setState((s) => ({ ...s, ascents: s.ascents.map((a) => (a.id === id ? { ...a, ...patch } : a)) }));
@@ -387,9 +453,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return items.sort((a, b) => b.at - a.at).slice(0, 60);
     };
 
+    const myWants = new Set(state.wants[ME] ?? []);
+    const twoWeeks = now - 14 * 86_400_000;
+    const live: Notif[] = [];
+    for (const a of state.ascents) {
+      if (a.userId === ME || a.createdAt < twoWeeks || !myWants.has(a.peakId)) continue;
+      live.push({ id: `w-${a.id}`, kind: a.beta?.surface ? 'conditions' : 'want-climbed', at: a.createdAt, userId: a.userId, peakId: a.peakId, ascentId: a.id });
+    }
+    for (const q of state.questions) {
+      if (q.userId === ME || q.at < twoWeeks) continue;
+      if (state.ascents.some((a) => a.userId === ME && a.peakId === q.peakId)) live.push({ id: `q-${q.id}`, kind: 'question', at: q.at, userId: q.userId, peakId: q.peakId, questionId: q.id, text: q.text });
+    }
+    const acts = [...state.notes, ...live].sort((a, b) => b.at - a.at).slice(0, 80);
+
+    const yearAgo = now - 365 * 86_400_000;
+    const legend = (peakId: string) => {
+      const counts = new Map<string, { count: number; first: number }>();
+      for (const a of state.ascents) {
+        if (a.peakId !== peakId || !a.date || new Date(a.date).getTime() < yearAgo) continue;
+        if (!isPublic(a.userId) && !circle.has(a.userId)) continue;
+        const c = counts.get(a.userId) ?? { count: 0, first: a.createdAt };
+        counts.set(a.userId, { count: c.count + 1, first: Math.min(c.first, a.createdAt) });
+      }
+      const board = [...counts.entries()].sort((a, b) => b[1].count - a[1].count || a[1].first - b[1].first).map(([userId, v]) => ({ userId, count: v.count }));
+      return { board, mine: counts.get(ME)?.count ?? 0 };
+    };
+    // Rolling 30 days, so the board is never empty on the 2nd of the month.
+    const d0 = new Date(now - 30 * 86_400_000);
+    const monthStart = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
+    const leaderboard = (scope: 'everyone' | 'friends') => {
+      const per = new Map<string, { feet: number; ascents: number; keys: Set<string> }>();
+      for (const a of state.ascents) {
+        if (!a.date || a.date < monthStart) continue;
+        if (scope === 'friends' ? !circle.has(a.userId) : !(circle.has(a.userId) || isPublic(a.userId))) continue;
+        const e = effort(a);
+        const row = per.get(a.userId) ?? { feet: 0, ascents: 0, keys: new Set<string>() };
+        row.ascents += 1;
+        if (!row.keys.has(e.key)) {
+          row.keys.add(e.key);
+          row.feet += e.feet;
+        }
+        per.set(a.userId, row);
+      }
+      if (!per.has(ME)) per.set(ME, { feet: 0, ascents: 0, keys: new Set() });
+      return [...per.entries()].map(([userId, r]) => ({ userId, feet: r.feet, ascents: r.ascents })).sort((a, b) => b.feet - a.feet);
+    };
+
     return {
       ...state,
       ready,
+      activity: () => acts,
+      unread: acts.filter((n) => n.at > state.notesSeenAt).length,
+      markSeen,
+      legend,
+      leaderboard,
+      questionsFor: (peakId) => state.questions.filter((q) => q.peakId === peakId).sort((a, b) => b.at - a.at),
+      ask,
+      answer,
+      notify,
       peaks: CO_14ERS,
       peakById,
       me,
@@ -478,7 +599,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       completePlan,
       dismissCandidate,
     };
-  }, [state, ready, setProfile, toggleFavorite, toggleWant, follow, unfollow, logAscent, addLogs, updateAscent, removeAscent, toggleKudos, addComment, createPlan, requestJoin, leavePlan, approve, completePlan, dismissCandidate]);
+  }, [state, ready, now, markSeen, ask, answer, notify, setProfile, toggleFavorite, toggleWant, follow, unfollow, logAscent, addLogs, updateAscent, removeAscent, toggleKudos, addComment, createPlan, requestJoin, leavePlan, approve, completePlan, dismissCandidate]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

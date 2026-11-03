@@ -1,6 +1,6 @@
 import { routesFor } from '@/data/routes';
 
-import type { Ascent, Beta, Plan, User } from '../types';
+import type { Ascent, Beta, Plan, Question, User } from '../types';
 
 /**
  * Demo crew so the app is alive before a backend is connected. Everything is relative to
@@ -172,5 +172,28 @@ export function buildDemo(now = Date.now()) {
     return { ...a, routeId: route?.id, winter, rating: a.note || i % 3 === 0 ? [4, 4.5, 5, 3.5, 4.5][i % 5] : undefined };
   });
 
-  return { users: DEMO_USERS, following: DEMO_FOLLOWING, wants: DEMO_WANTS, ascents: filled, plans };
+  const h = 3_600_000;
+  const questions: Question[] = [
+    {
+      id: 'q_kite', peakId: 'co-mount-democrat', userId: 'u_sam', text: 'Is the road to Kite Lake still open, or do you have to park lower now?', at: now - 30 * h,
+      answers: [{ id: 'qa1', userId: 'u_priya', text: 'Open to the lot as of Saturday, a little rutted the last half mile. Any car with clearance is fine.', at: now - 26 * h }],
+    },
+    {
+      id: 'q_quandary', peakId: 'co-quandary-peak', userId: 'u_avery', text: 'First winter 14er. Microspikes enough this week, or do I need snowshoes?', at: now - 20 * h,
+      answers: [
+        { id: 'qa2', userId: 'u_jess', text: 'Spikes were plenty yesterday, the trail is packed. Snowshoes only if it dumps again.', at: now - 18 * h },
+        { id: 'qa3', userId: 'u_marcus', text: 'Bring goggles. The wind on the ridge was the hard part, not the snow.', at: now - 17 * h },
+      ],
+    },
+    {
+      id: 'q_longs', peakId: 'co-longs-peak', userId: 'u_nina', text: 'Anyone been through the Keyhole lately? Wondering if there is ice on the Ledges.', at: now - 50 * h,
+      answers: [],
+    },
+    {
+      id: 'q_elbert', peakId: 'co-mount-elbert', userId: 'u_theo', text: 'North or South Elbert trailhead for a first timer?', at: now - 4 * 24 * h,
+      answers: [{ id: 'qa4', userId: 'u_diego', text: 'North. Shorter drive in, easier to follow, and the 2WD lot is right there.', at: now - 4 * 24 * h + 3 * h }],
+    },
+  ];
+
+  return { users: DEMO_USERS, following: DEMO_FOLLOWING, wants: DEMO_WANTS, ascents: filled, plans, questions };
 }

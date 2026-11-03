@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { PeakPoster } from '@/components/peak-poster';
 import { Tilt } from '@/components/tilt';
-import { Chip, Display, Screen } from '@/components/ui';
+import { PeakImage } from '@/components/peak-photo';
+import { Chip, Display, ProgressBar, Screen } from '@/components/ui';
+import { LISTS } from '@/lib/badges';
 import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { useStore } from '@/lib/store';
 
@@ -37,6 +39,29 @@ export default function PeaksScreen() {
           You&apos;ve climbed {climbed} of Colorado&apos;s {peaks.length} fourteeners
         </Text>
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing.three }} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: 10 }}>
+        {LISTS.map((l) => {
+          const done = l.peaks.filter((p) => summitedIds.has(p)).length;
+          return (
+            <Pressable key={l.id} onPress={() => router.push(`/list/${l.id}`)} style={styles.list}>
+              <View style={{ flexDirection: 'row' }}>
+                {l.peaks.slice(0, 3).map((p, i) => (
+                  <PeakImage key={p} peakId={p} width={70} height={92} index={i} />
+                ))}
+              </View>
+              <View style={{ padding: 12, gap: 6 }}>
+                <Text style={styles.listName} numberOfLines={1}>
+                  {l.name}
+                </Text>
+                <Text style={styles.listMeta}>
+                  {done} of {l.peaks.length} done
+                </Text>
+                <ProgressBar value={done} total={l.peaks.length} height={5} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
       <TextInput
         value={q}
         onChangeText={setQ}
@@ -67,6 +92,9 @@ export default function PeaksScreen() {
 
 const styles = StyleSheet.create({
   search: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 99, fontSize: 16, fontFamily: Type.body },
+  list: { width: 210, borderRadius: 14, overflow: 'hidden', backgroundColor: c.backgroundElement },
+  listName: { color: c.text, fontFamily: Type.display, fontSize: 17 },
+  listMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
   chips: { flexDirection: 'row', gap: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });

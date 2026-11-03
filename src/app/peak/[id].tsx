@@ -4,6 +4,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Backdrop } from '@/components/backdrop';
+import { AskBox, LegendCard, QuestionThread } from '@/components/engage';
 import { Stars } from '@/components/log-bits';
 import { PEAK_STATS } from '@/data/peak-stats.generated';
 import { routeById, routesFor, standardRoute } from '@/data/routes';
@@ -26,7 +27,7 @@ function names(us: { name: string }[]) {
 
 export default function PeakScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { peaks, peakById, logs, profile, toggleFavorite, toggleWant, wantsOf, betaFor, friendsWhoClimbed, friendsWhoWant, user, peakActivity, displayName } = useStore();
+  const { peaks, peakById, logs, profile, toggleFavorite, toggleWant, wantsOf, betaFor, friendsWhoClimbed, friendsWhoWant, user, peakActivity, displayName, questionsFor } = useStore();
   const { width } = useWindowDimensions();
   const contentW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
   const [time, setTime] = useState(0.42);
@@ -106,6 +107,8 @@ export default function PeakScreen() {
               </Pressable>
             </View>
 
+            <LegendCard peakId={peak.id} />
+
             <SectionHeader title="The numbers" />
             <View style={styles.grid}>
               <Fact value={peak.elevationFt.toLocaleString()} unit="ft" label="Elevation" />
@@ -170,6 +173,15 @@ export default function PeakScreen() {
               ) : (
                 <Body muted>Nobody has reported in the last six weeks. If you go, your report is the one everyone will read.</Body>
               )}
+            </View>
+
+            <View style={{ gap: 10 }}>
+              <SectionHeader title="Questions" />
+              <Text style={styles.communityMeta}>People who climbed it recently get your question.</Text>
+              <AskBox peakId={peak.id} peakName={peak.name} />
+              {questionsFor(peak.id).map((q) => (
+                <QuestionThread key={q.id} q={q} />
+              ))}
             </View>
 
             {(climbed.length > 0 || wanters.length > 0) && (

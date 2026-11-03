@@ -8,6 +8,7 @@ import { PeakImage } from '@/components/peak-photo';
 import { Button } from '@/components/ui';
 import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success, tap } from '@/lib/haptics';
+import { badgesFor, newlyEarned } from '@/lib/badges';
 import { isWinter, useStore, type NewAscent } from '@/lib/store';
 
 const c = Colors.dark;
@@ -20,7 +21,7 @@ type Draft = { date: string; winter: boolean };
  */
 export default function BackfillScreen() {
   const { first } = useLocalSearchParams<{ first?: string }>();
-  const { peaks, setProfile, addLogs, summitedIds } = useStore();
+  const { peaks, peakById, setProfile, addLogs, summitedIds, logs, notify } = useStore();
   const [q, setQ] = useState('');
   const [drafts, setDrafts] = useState<Record<string, Draft[]>>({});
   const [open, setOpen] = useState<string | null>(null);
@@ -48,8 +49,14 @@ export default function BackfillScreen() {
       const rows: NewAscent[] = Object.entries(drafts).flatMap(([peakId, ds]) =>
         ds.map((d) => ({ peakId, date: d.date && DATE_RE.test(d.date) ? d.date : null, winter: d.winter, source: 'manual' as const })),
       );
-      addLogs(rows);
+      const created = addLogs(rows);
       success();
+      const now = Date.now();
+      for (const b of newlyEarned(badgesFor(logs, peaks, peakById), badgesFor([...logs, ...created], peaks, peakById))) notify({ kind: 'badge', at: now, text: b.name });
+      if (first) {
+        // Demo: a climber with overlapping peaks finds you. Real version: suggested follows.
+        notify({ kind: 'follow', at: now + 1, userId: 'u_jess' });
+      }
     }
     setProfile({ onboarded: true });
     if (first) router.replace('/you');

@@ -7,7 +7,9 @@ import { PeakPoster } from '@/components/peak-poster';
 import { PeakImage } from '@/components/peak-photo';
 import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
+import { BadgeGrid } from '@/components/engage';
 import { StatsCard } from '@/components/stats-card';
+import { badgesFor } from '@/lib/badges';
 import { Stars } from '@/components/log-bits';
 import { Tilt } from '@/components/tilt';
 import { SectionHeader } from '@/components/ui';
@@ -107,6 +109,8 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
           ))}
         </View>
         <StatsCard s={climberStats(list, peaks, peakById)} isMe={isMe} />
+        <SectionHeader title="Badges" action={isMe ? 'See all' : undefined} onAction={() => router.push('/badges')} />
+        <BadgeGrid badges={badgesFor(list, peaks, peakById)} limit={8} />
         {isMe && (
           <Pressable onPress={() => router.push('/backfill')} style={styles.addPast}>
             <Icon name="plus" size={18} color={c.accent} weight={2.2} />

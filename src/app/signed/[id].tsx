@@ -6,7 +6,9 @@ import { Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-nat
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BadgeMedal } from '@/components/engage';
 import { RidgelineArt } from '@/components/ridgeline-art';
+import { badgesFor, newlyEarned } from '@/lib/badges';
 import { Stamp } from '@/components/stamp';
 import { Button } from '@/components/ui';
 import { Colors, Type } from '@/constants/theme';
@@ -22,6 +24,7 @@ const c = Colors.dark;
 export default function SignedScreen() {
   const { id, count } = useLocalSearchParams<{ id: string; count?: string }>();
   const { logs, peakById, peaks, summitedIds } = useStore();
+  const unlocked = newlyEarned(badgesFor(logs.filter((l) => l.id !== id), peaks, peakById), badgesFor(logs, peaks, peakById));
   const { width, height } = useWindowDimensions();
   const log = logs.find((l) => l.id === id);
   const peak = log && peakById.get(log.peakId);
@@ -87,6 +90,19 @@ export default function SignedScreen() {
               <View key={p.id} style={[styles.seg, { backgroundColor: i < shown ? c.accent : c.backgroundSelected }]} />
             ))}
           </View>
+          {unlocked.length > 0 && (
+            <View style={styles.unlocked}>
+              {unlocked.slice(0, 3).map((b) => (
+                <View key={b.id} style={styles.unlockRow}>
+                  <BadgeMedal badge={b} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.unlockKicker}>New badge</Text>
+                    <Text style={styles.unlockName}>{b.name}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
           <View style={{ gap: 10, marginTop: 18 }}>
             <Button title="Share the card" onPress={() => router.replace(`/share/${log.id}`)} />
             <Button title="Back to my register" variant="ghost" onPress={() => router.dismissTo('/')} />
@@ -98,6 +114,10 @@ export default function SignedScreen() {
 }
 
 const styles = StyleSheet.create({
+  unlocked: { marginTop: 16, gap: 8, padding: 12, borderRadius: 16, backgroundColor: '#F3EBDD' },
+  unlockRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  unlockKicker: { color: '#7A5410', fontFamily: Type.bodyBold, fontSize: 12 },
+  unlockName: { color: Colors.dark.text, fontFamily: Type.display, fontSize: 19 },
   safe: { flex: 1, justifyContent: 'space-between', paddingHorizontal: 22 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 30 },
   bottom: { paddingBottom: 18 },

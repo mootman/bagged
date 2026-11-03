@@ -10,6 +10,7 @@ import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { localDay } from '@/lib/detect';
 import { success } from '@/lib/haptics';
 import { OTHER_ROUTE_ID, routesFor } from '@/data/routes';
+import { badgesFor, newlyEarned } from '@/lib/badges';
 import { daysSince, isWinter, ME, useStore } from '@/lib/store';
 import { withClaimLinks } from '@/lib/tagging';
 import type { Beta } from '@/lib/types';
@@ -20,7 +21,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 /** Sign a summit: when, who with, and what it was like up there. */
 export default function NewAscentScreen() {
   const { peakId } = useLocalSearchParams<{ peakId: string }>();
-  const { peakById, me, logAscent, logs, following, user, friendsWhoClimbed } = useStore();
+  const { peakById, peaks, me, logAscent, logs, following, user, friendsWhoClimbed, notify } = useStore();
   const peak = peakById.get(peakId);
   const [date, setDate] = useState(() => localDay(Date.now()));
   const [withIds, setWithIds] = useState<string[]>([]);
@@ -68,6 +69,8 @@ export default function NewAscentScreen() {
         customGainFt: other ? Number(gain) || undefined : undefined,
       });
       success();
+      const now = Date.now();
+      for (const b of newlyEarned(badgesFor(logs, peaks, peakById), badgesFor([...logs, mine], peaks, peakById))) notify({ kind: 'badge', at: now, text: b.name });
       router.replace({ pathname: '/signed/[id]', params: { id: mine.id } });
     } finally {
       setSaving(false);

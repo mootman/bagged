@@ -43,7 +43,7 @@ export function Screen({
 
 /** Display type. Tracking tightens as size grows. */
 export function Display({ children, size = 34, style }: { children: ReactNode; size?: number; style?: StyleProp<TextStyle> }) {
-  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.05, fontFamily: Type.display, letterSpacing: -size * 0.025 }, style]}>{children}</Text>;
+  return <Text style={[{ color: c.text, fontSize: size, lineHeight: size * 1.12, fontFamily: Type.display, letterSpacing: -size * 0.01 }, style]}>{children}</Text>;
 }
 
 export function Body({ children, muted, style, numberOfLines }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle>; numberOfLines?: number }) {
@@ -65,7 +65,7 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
       <Text style={styles.sectionTitle}>{title}</Text>
       {action && (
         <Pressable onPress={onAction} hitSlop={10}>
-          <Text style={{ color: c.link, fontSize: 13, fontFamily: Type.bodyMedium }}>{action}</Text>
+          <Text style={{ color: c.link, fontSize: 15, fontFamily: Type.bodyBold }}>{action}</Text>
         </Pressable>
       )}
     </View>
@@ -87,7 +87,7 @@ export function Button({
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const bg = variant === 'primary' ? c.accent : variant === 'secondary' ? c.backgroundSelected : 'transparent';
+  const bg = variant === 'primary' ? c.accent : variant === 'secondary' ? c.backgroundElement : 'transparent';
   const fg = variant === 'primary' ? c.accentText : variant === 'ghost' ? c.textSecondary : c.text;
   return (
     <Pressable
@@ -141,7 +141,7 @@ export function Stats({ items }: { items: { value: string; label: string; color?
 export function ProgressBar({ value, total, color = c.accent, height = 8 }: { value: number; total: number; color?: string; height?: number }) {
   const pct = total ? Math.min(1, value / total) : 0;
   return (
-    <View style={{ height, backgroundColor: c.backgroundSelected, overflow: 'hidden' }}>
+    <View style={{ height, borderRadius: height / 2, backgroundColor: c.backgroundSelected, overflow: 'hidden' }}>
       <View style={{ width: `${pct * 100}%`, height: '100%', backgroundColor: color }} />
     </View>
   );
@@ -151,12 +151,12 @@ const styles = StyleSheet.create({
   inner: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
   label: { color: c.textSecondary, fontSize: 13, fontFamily: Type.bodyMedium },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: Spacing.four },
-  sectionTitle: { color: c.text, fontSize: 20, fontFamily: Type.display, letterSpacing: -0.3 },
-  button: { minHeight: 52, borderRadius: Radius.sm, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
-  card: { borderRadius: Radius.sm, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.sm },
+  sectionTitle: { color: c.text, fontSize: 24, fontFamily: Type.display },
+  button: { minHeight: 52, borderRadius: 99, paddingHorizontal: Spacing.four, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: Radius.md, padding: Spacing.three, gap: Spacing.two, backgroundColor: c.backgroundElement },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 99 },
   stats: { flexDirection: 'row', paddingVertical: Spacing.two },
   stat: { flex: 1, gap: 2 },
-  statValue: { color: c.text, fontSize: 34, fontFamily: Type.display, letterSpacing: -0.8 },
+  statValue: { color: c.text, fontSize: 32, fontFamily: Type.display },
   statLabel: { color: c.textSecondary, fontSize: 13, fontFamily: Type.body },
 });

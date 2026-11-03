@@ -65,10 +65,10 @@ export default function PlansScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingTop: Spacing.three },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, letterSpacing: -1.4 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 34 },
   sub: { color: c.textSecondary, fontFamily: Type.body, fontSize: 17, lineHeight: 24, marginTop: -8 },
-  cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.four, backgroundColor: c.accent },
-  ctaTitle: { color: c.accentText, fontFamily: Type.display, fontSize: 24, letterSpacing: -0.5 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: Spacing.four, borderRadius: 20, backgroundColor: c.accent },
+  ctaTitle: { color: c.accentText, fontFamily: Type.display, fontSize: 24 },
   ctaSub: { color: 'rgba(255,255,255,0.86)', fontFamily: Type.body, fontSize: 15, lineHeight: 21, marginTop: 4 },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: Spacing.three },
   hint: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15, lineHeight: 21 },

@@ -66,7 +66,7 @@ export default function SignedScreen() {
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <View style={StyleSheet.absoluteFill}>
         <RidgelineArt peakId={peak.id} lit width={width} height={height} count={44} top={0.16} bottom={0.78} amplitude={0.22} reveal />
-        <LinearGradient colors={['transparent', 'rgba(236,238,232,0.9)', c.background]} locations={[0, 0.45, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.5 }} />
+        <LinearGradient colors={['transparent', 'rgba(251,250,247,0.92)', c.background]} locations={[0, 0.45, 1]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: height * 0.5 }} />
       </View>
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
@@ -102,11 +102,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 30 },
   bottom: { paddingBottom: 18 },
   kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4, marginTop: 4 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, marginTop: 4 },
   countRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 12 },
-  count: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 54, fontVariant: ['tabular-nums'] },
+  count: { color: c.accent, fontFamily: Type.display, fontSize: 56 },
   of: { color: c.textSecondary, fontFamily: Type.display, fontSize: 26 },
   list: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16 },
   segments: { flexDirection: 'row', gap: 2, marginTop: 10 },
-  seg: { flex: 1, height: 8 },
+  seg: { flex: 1, height: 8, borderRadius: 2 },
 });

@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { PeakPoster } from '@/components/peak-poster';
-import { RidgelineArt } from '@/components/ridgeline-art';
+import { PeakImage } from '@/components/peak-photo';
 import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
 import { Tilt } from '@/components/tilt';
 import { SectionHeader } from '@/components/ui';
-import { BottomTabInset, Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { ME, useStore } from '@/lib/store';
 import type { Ascent } from '@/lib/types';
@@ -38,6 +39,8 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
   if (!u) return null;
   const hero = list[0] ? peakById.get(list[0].peakId) : peakById.get('co-longs-peak');
   const range = peaks.slice().sort((a, b) => a.lon - b.lon);
+  const climbedPeaks = [...new Set(list.map((a) => a.peakId))].map((id) => peakById.get(id)).filter((p): p is NonNullable<typeof p> => !!p);
+  const tileW = (contentW - 8 * 2) / 3;
   const common = isMe ? null : inCommon(userId);
   const byYear = new Map<string, Ascent[]>();
   for (const l of list) {
@@ -47,18 +50,17 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}>
-      <View style={{ height: 420 }}>
-        {hero && <RidgelineArt peakId={hero.id} lit={list.length > 0} width={width} height={420} count={38} top={0.1} bottom={0.72} amplitude={0.24} reveal />}
+      <View style={{ height: 300 }}>
+        {hero && <PeakImage peakId={hero.id} photoId={list[0]?.photoId} width={width} height={300} credit />}
+        <LinearGradient colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']} style={styles.topShade} pointerEvents="none" />
         {topRight && <View style={styles.topRight}>{topRight}</View>}
-        <View style={styles.heroBottom}>
-          <View style={styles.idRow}>
-            <Avatar user={u} size={44} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.handle}>@{u.handle || 'you'}{u.home ? `, ${u.home}` : ''}</Text>
-            </View>
-          </View>
-          <Text style={styles.heroName}>{isMe ? u.name || 'You' : u.name}</Text>
+      </View>
+      <View style={styles.idBlock}>
+        <View style={styles.avatarRing}>
+          <Avatar user={u} size={84} />
         </View>
+        <Text style={styles.heroName}>{isMe ? u.name || 'You' : u.name}</Text>
+        <Text style={styles.handle}>@{u.handle || 'you'}{u.home ? `, ${u.home}` : ''}</Text>
       </View>
 
       <View style={styles.page}>
@@ -108,23 +110,20 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
           <Mini value={String(wants.length)} label="want to climb" />
         </View>
 
-        <SectionHeader title="The range" action="All peaks" onAction={() => router.push('/peaks')} />
+        {climbedPeaks.length > 0 && <SectionHeader title={isMe ? 'Your summits' : 'Summits'} action="All peaks" onAction={() => router.push('/peaks')} />}
+        {climbedPeaks.length > 0 && (
+          <View style={styles.summitGrid}>
+            {climbedPeaks.slice(0, 9).map((p) => (
+              <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)}>
+                <PeakImage peakId={p.id} photoId={isMe ? photoFor.get(p.id) : undefined} width={tileW} height={tileW} radius={Radius.sm} />
+                <Text numberOfLines={1} style={[styles.tileLabel, { width: tileW }]}>
+                  {p.name.replace(/^Mount /, 'Mt. ')}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: 3 }}>
-        {range.map((p) => {
-          const lit = done.has(p.id);
-          return (
-            <Pressable key={p.id} onPress={() => router.push(`/peak/${p.id}`)} style={{ alignItems: 'center', gap: 6 }}>
-              <View style={[styles.rangeTile, lit && { backgroundColor: '#F6F7F3' }]}>
-                <RidgelineArt peakId={p.id} lit={lit} width={62} height={96} count={11} top={0.25} bottom={0.95} amplitude={0.35} paper={lit ? '#F6F7F3' : c.backgroundElement} marker={false} />
-              </View>
-              <Text numberOfLines={1} style={[styles.rangeLabel, lit && { color: c.accent }]}>
-                {p.name.replace(/^Mount /, 'Mt. ').replace(/ Peak$/, '').replace(/ Mountain$/, '')}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
 
       <View style={styles.page}>
         {u.favorites.length > 0 || isMe ? <SectionHeader title="Four favorites" /> : null}
@@ -198,7 +197,7 @@ function DiaryRow({ log }: { log: Ascent }) {
         <Text style={styles.diaryMonth}>{m ? MONTHS[Number(m) - 1] : ''}</Text>
         <Text style={styles.diaryDay}>{d ? Number(d) : '?'}</Text>
       </View>
-      <PeakPoster peak={peak} width={44} climbed photoId={log.userId === ME ? (log.photoId ?? photoFor.get(peak.id)) : undefined} showTitle={false} />
+      <PeakImage peakId={peak.id} photoId={log.userId === ME ? (log.photoId ?? photoFor.get(peak.id)) : undefined} index={1} width={60} height={60} radius={Radius.sm} />
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={styles.diaryName}>{peak.name}</Text>
         <Text style={styles.diaryMeta} numberOfLines={1}>
@@ -212,33 +211,34 @@ function DiaryRow({ log }: { log: Ascent }) {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
+  topShade: { position: 'absolute', top: 0, left: 0, right: 0, height: 120 },
   topRight: { position: 'absolute', top: 54, right: Spacing.three },
-  heroBottom: { position: 'absolute', left: Spacing.three, right: Spacing.three, bottom: Spacing.two, gap: 8 },
-  idRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  handle: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 15 },
-  heroName: { color: c.text, fontFamily: Type.display, fontSize: 48, lineHeight: 50, letterSpacing: -1.6 },
-  followBtn: { backgroundColor: c.accent, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  idBlock: { alignItems: 'center', marginTop: -46, gap: 2, paddingHorizontal: Spacing.three, marginBottom: Spacing.two },
+  avatarRing: { borderRadius: 50, borderWidth: 4, borderColor: c.background, marginBottom: 6 },
+  handle: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15 },
+  heroName: { color: c.text, fontFamily: Type.display, fontSize: 34, lineHeight: 40 },
+  followBtn: { backgroundColor: c.accent, minHeight: 48, borderRadius: 99, alignItems: 'center', justifyContent: 'center' },
   following: { backgroundColor: c.backgroundElement },
-  followText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 16, marginTop: 2 },
-  common: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
-  planTogether: { alignSelf: 'flex-start' },
-  planTogetherText: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 16, textDecorationLine: 'underline' },
-  bigCount: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: Spacing.three },
-  bigNum: { color: c.accent, fontFamily: Type.displayBlack, fontSize: 96, lineHeight: 96, letterSpacing: -4, fontVariant: ['tabular-nums'] },
-  bigOf: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 16, lineHeight: 20, maxWidth: 150, paddingBottom: 14 },
+  followText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 16 },
+  common: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23, textAlign: 'center' },
+  planTogether: { alignSelf: 'center' },
+  planTogetherText: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 16 },
+  bigCount: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginTop: Spacing.two },
+  bigNum: { color: c.accent, fontFamily: Type.display, fontSize: 88, lineHeight: 92 },
+  bigOf: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 16, lineHeight: 21, maxWidth: 160, paddingBottom: 10 },
   bigLabel: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
   segments: { flexDirection: 'row', gap: 2 },
-  seg: { flex: 1, height: 12 },
+  seg: { flex: 1, height: 10, borderRadius: 2 },
   statsRow: { flexDirection: 'row', paddingVertical: Spacing.two, marginTop: Spacing.one },
-  rangeTile: { width: 62, height: 96, overflow: 'hidden', backgroundColor: c.backgroundElement },
-  rangeLabel: { width: 62, color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 10, textAlign: 'center' },
+  summitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tileLabel: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13, marginTop: 5 },
   favs: { flexDirection: 'row', gap: Spacing.two },
-  emptyFav: { backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center' },
-  year: { color: c.text, fontFamily: Type.display, fontSize: 26, letterSpacing: -0.6, marginTop: Spacing.three, marginBottom: 4 },
-  diaryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: 10 },
+  emptyFav: { backgroundColor: c.backgroundElement, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
+  year: { color: c.text, fontFamily: Type.display, fontSize: 26, marginTop: Spacing.three, marginBottom: 4 },
+  diaryRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 8 },
   diaryDate: { width: 36, alignItems: 'center' },
   diaryMonth: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 12 },
-  diaryDay: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 28, fontVariant: ['tabular-nums'] },
+  diaryDay: { color: c.text, fontFamily: Type.display, fontSize: 24, lineHeight: 28 },
   diaryName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 17 },
   diaryMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
 });

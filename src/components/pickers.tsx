@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
-import { Colors, Type } from '@/constants/theme';
+import { Colors, Radius, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 import type { Beta, User } from '@/lib/types';
 
@@ -21,7 +21,7 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
               onChange(on ? undefined : o);
             }}
             style={[styles.segItem, on && styles.segOn]}>
-            <Text style={[styles.segText, on && { color: c.background }]}>{o}</Text>
+            <Text style={[styles.segText, on && { color: c.accentText }]}>{o}</Text>
           </Pressable>
         );
       })}
@@ -99,13 +99,13 @@ export function Field({ label, children, style }: { label: string; children: Rea
 
 const styles = StyleSheet.create({
   seg: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  segItem: { paddingHorizontal: 13, minHeight: 40, justifyContent: 'center', backgroundColor: c.backgroundElement },
-  segOn: { backgroundColor: c.text },
-  segText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14, marginTop: 2 },
+  segItem: { paddingHorizontal: 15, minHeight: 40, borderRadius: 99, justifyContent: 'center', backgroundColor: c.backgroundElement },
+  segOn: { backgroundColor: c.accent },
+  segText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14 },
   label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
-  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 46, fontFamily: Type.bodyMedium, fontSize: 15, fontVariant: ['tabular-nums'] },
-  friend: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, backgroundColor: c.backgroundElement },
+  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 16, borderRadius: Radius.sm, minHeight: 46, fontFamily: Type.bodyMedium, fontSize: 15, fontVariant: ['tabular-nums'] },
+  friend: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: Radius.md, backgroundColor: c.backgroundElement },
   friendName: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 15 },
   wants: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 13, marginTop: 1 },
-  check: { width: 24, height: 24, borderWidth: 2, borderColor: c.line, alignItems: 'center', justifyContent: 'center' },
+  check: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: c.line, alignItems: 'center', justifyContent: 'center' },
 });

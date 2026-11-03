@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RidgelineArt } from '@/components/ridgeline-art';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { PeakImage } from '@/components/peak-photo';
 import { Mark } from '@/components/mark';
 import { Body, Button } from '@/components/ui';
 import { BottomTabInset, Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
@@ -26,10 +28,11 @@ export function Welcome() {
   return (
     <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }} keyboardShouldPersistTaps="handled">
-        <View style={{ height: 470 }}>
-          <RidgelineArt peakId="co-longs-peak" lit width={width} height={470} count={44} top={0.2} bottom={0.9} amplitude={0.26} reveal />
+        <View style={{ height: 520 }}>
+          <PeakImage peakId="co-maroon-peak" width={width} height={520} credit />
+          <LinearGradient colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)']} style={StyleSheet.absoluteFill} pointerEvents="none" />
           <SafeAreaView edges={['top']} style={styles.top}>
-            <Mark />
+            <Mark color="#fff" size={22} />
           </SafeAreaView>
         </View>
         <View style={[styles.page, { width: w }]}>
@@ -49,6 +52,6 @@ export function Welcome() {
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: Spacing.three, flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: Spacing.three },
   page: { paddingHorizontal: Spacing.three, alignSelf: 'center', gap: Spacing.three },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4 },
-  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 16, paddingVertical: 15, fontSize: 16, fontFamily: Type.body },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 40, lineHeight: 46, marginTop: Spacing.two },
+  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 20, paddingVertical: 15, borderRadius: 99, fontSize: 16, fontFamily: Type.body },
 });

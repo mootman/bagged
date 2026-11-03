@@ -1,16 +1,16 @@
-import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { RidgelineArt } from '@/components/ridgeline-art';
-import { Colors, Type } from '@/constants/theme';
+import { Icon } from '@/components/icon';
+import { PeakImage } from '@/components/peak-photo';
+import { Colors, Radius, Type } from '@/constants/theme';
 import type { Peak } from '@/lib/types';
-import { usePhoto } from '@/lib/use-photo';
 
 const c = Colors.dark;
 
 /**
- * 2:3 sheet for a peak. Your summit photo if you have one, otherwise its real terrain,
- * inked in blue once you've climbed it. The name sits on the sheet, under the drawing.
+ * A peak as a photo tile, 2:3 like a film poster on Letterboxd. Your summit photo if you have
+ * one, otherwise a photo of the mountain. A check in the corner once you've climbed it.
  */
 export function PeakPoster({
   peak,
@@ -18,6 +18,7 @@ export function PeakPoster({
   climbed,
   photoId,
   showTitle = true,
+  aspect = 1.5,
   style,
 }: {
   peak: Peak;
@@ -25,55 +26,42 @@ export function PeakPoster({
   climbed: boolean;
   photoId?: string;
   showTitle?: boolean;
+  aspect?: number;
   style?: StyleProp<ViewStyle>;
 }) {
-  const uri = usePhoto(photoId);
-  const height = Math.round(width * 1.5);
-  const small = width < 90;
+  const height = Math.round(width * aspect);
+  const small = width < 100;
   const tiny = width < 60;
   const name = peak.name.replace(/^Mount /, 'Mt. ');
-  const longest = Math.max(...name.split(' ').map((w) => w.length));
-  const fontSize = Math.min(small ? 12 : 15, (width - 14) / (longest * 0.56));
-  const paper = climbed ? '#F6F7F3' : c.backgroundElement;
+  const radius = tiny ? Radius.xs : small ? Radius.sm : Radius.md;
 
   return (
-    <View style={[styles.sheet, { width, height, backgroundColor: paper }, style]}>
-      {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
-      ) : (
-        <RidgelineArt
-          peakId={peak.id}
-          lit={climbed}
-          width={width}
-          height={height}
-          count={tiny ? 10 : small ? 16 : 24}
-          top={showTitle ? 0.14 : 0.2}
-          bottom={showTitle ? 0.68 : 0.94}
-          amplitude={0.28}
-          paper={paper}
-          marker={!tiny}
-        />
-      )}
+    <View style={[{ width, height, borderRadius: radius, overflow: 'hidden' }, style]}>
+      <PeakImage peakId={peak.id} photoId={photoId} width={width} height={height} />
       {showTitle && (
-        <View style={[styles.title, uri && styles.titleOnPhoto]}>
-          <Text numberOfLines={2} style={{ color: uri ? '#fff' : c.text, fontFamily: Type.display, fontSize, lineHeight: fontSize * 1.1, letterSpacing: -0.2 }}>
-            {name}
-          </Text>
-          <Text style={[styles.elev, { fontSize: small ? 11 : 12, color: uri ? 'rgba(255,255,255,0.85)' : climbed ? c.accent : c.textSecondary }]}>
-            {peak.elevationFt.toLocaleString()} ft
-          </Text>
+        <>
+          <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.62)']} style={[styles.shade, { height: height * 0.55 }]} pointerEvents="none" />
+          <View style={[styles.title, { padding: small ? 8 : 12 }]} pointerEvents="none">
+            <Text numberOfLines={2} style={[styles.name, { fontSize: small ? 14 : 18, lineHeight: small ? 16 : 21 }]}>
+              {name}
+            </Text>
+            <Text style={[styles.elev, { fontSize: small ? 11 : 13 }]}>{peak.elevationFt.toLocaleString()} ft</Text>
+          </View>
+        </>
+      )}
+      {climbed && !tiny && (
+        <View style={[styles.badge, small && { width: 22, height: 22, borderRadius: 11, top: 6, right: 6 }]}>
+          <Icon name="check" size={small ? 13 : 16} color="#fff" weight={2.6} />
         </View>
       )}
-      {/* A climbed sheet gets a heavy blue edge along the bottom, like a filed map. */}
-      {climbed && !tiny && <View style={styles.edge} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { overflow: 'hidden' },
-  title: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 8, paddingBottom: 10 },
-  titleOnPhoto: { backgroundColor: 'rgba(21,32,26,0.45)', paddingTop: 8 },
-  elev: { fontFamily: Type.bodyMedium, marginTop: 2, fontVariant: ['tabular-nums'] },
-  edge: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, backgroundColor: c.accent },
+  shade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  title: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  name: { color: '#fff', fontFamily: Type.display },
+  elev: { color: 'rgba(255,255,255,0.88)', fontFamily: Type.bodyMedium, marginTop: 2 },
+  badge: { position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
 });

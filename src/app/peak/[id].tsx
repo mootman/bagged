@@ -1,14 +1,15 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Backdrop } from '@/components/backdrop';
 import { Terrain3D } from '@/components/terrain-3d';
 import { TimeSlider } from '@/components/time-slider';
 import { Icon } from '@/components/icon';
 import { Avatar, BetaChips, FacePile, PlanCard } from '@/components/social';
 import { Body, Button, Display, SectionHeader } from '@/components/ui';
-import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
 import { daysSince, formatDate, ME, useStore } from '@/lib/store';
 import { heightmap } from '@/lib/terrain';
@@ -34,6 +35,8 @@ function names(us: { name: string }[]) {
 export default function PeakScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { peaks, peakById, logs, profile, toggleFavorite, toggleWant, wantsOf, betaFor, friendsWhoClimbed, friendsWhoWant, plansFor, user } = useStore();
+  const { width } = useWindowDimensions();
+  const contentW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
   const [time, setTime] = useState(0.7);
   const [scrollOn, setScrollOn] = useState(true);
   const peak = peakById.get(id);
@@ -55,26 +58,18 @@ export default function PeakScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: '', headerTransparent: true, headerTintColor: c.text, headerStyle: { backgroundColor: 'transparent' } }} />
+      <Stack.Screen options={{ title: '', headerTransparent: true, headerTintColor: '#fff', headerStyle: { backgroundColor: 'transparent' } }} />
       <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: c.background }}>
         <ScrollView scrollEnabled={scrollOn} contentContainerStyle={{ paddingBottom: Spacing.six }}>
-          {/* The 3D view takes touches for orbiting; pause page scroll while a finger is on it. */}
-          <View onTouchStart={() => setScrollOn(false)} onTouchEnd={() => setScrollOn(true)} onTouchCancel={() => setScrollOn(true)}>
-            <Terrain3D peakId={peak.id} time={time} height={430} />
-          </View>
-          <View style={styles.hint} pointerEvents="none">
-            <Text style={styles.hintText}>Drag to turn it</Text>
-          </View>
+          <Backdrop peakId={peak.id} photoId={mine[0]?.photoId} height={Math.round(width * 1.05)} />
 
           <View style={styles.body}>
             <View style={{ gap: 6 }}>
-              <Display size={44}>{peak.name}</Display>
+              <Display size={40}>{peak.name}</Display>
               <Text style={styles.sub}>
                 {peak.range} Range{mine.length ? <Text style={{ color: c.accent, fontFamily: Type.bodyBold }}>, climbed {mine.length === 1 ? 'once' : `${mine.length} times`}</Text> : null}
               </Text>
             </View>
-
-            <TimeSlider value={time} onChange={setTime} />
 
             <View style={styles.facts}>
               <Fact value={peak.elevationFt.toLocaleString()} unit="ft" label="Summit" />
@@ -182,6 +177,18 @@ export default function PeakScreen() {
               </>
             )}
 
+            {/* The mountain in 3D. Drag to turn it, slide the light from dawn to night. */}
+            <View style={{ gap: 12 }}>
+              <SectionHeader title="The mountain up close" />
+              <View style={styles.terrain} onTouchStart={() => setScrollOn(false)} onTouchEnd={() => setScrollOn(true)} onTouchCancel={() => setScrollOn(true)}>
+                <Terrain3D peakId={peak.id} time={time} height={contentW * 0.95} />
+                <View style={styles.hint} pointerEvents="none">
+                  <Text style={styles.hintText}>Drag to turn it</Text>
+                </View>
+              </View>
+              <TimeSlider value={time} onChange={setTime} />
+            </View>
+
             <View style={[styles.route, hard && { borderLeftColor: c.danger }]}>
               <Text style={[styles.routeTag, { color: hard ? c.danger : c.success }]}>{hard ? 'Scramble' : 'Hike'}</Text>
               <Body muted style={{ flex: 1 }}>
@@ -208,7 +215,7 @@ export default function PeakScreen() {
                 ))}
               </>
             )}
-            <Text style={styles.credit}>Terrain from USGS 3DEP and SRTM via AWS Terrain Tiles, 5 km around the summit, height exaggerated 1.35 times.</Text>
+            <Text style={styles.credit}>Photos from Wikimedia Commons, credited on each photo. Terrain from USGS 3DEP and SRTM via AWS Terrain Tiles, 5 km around the summit, height exaggerated 1.35 times.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -219,7 +226,7 @@ export default function PeakScreen() {
 function Fact({ value, unit, label }: { value: string; unit?: string; label: string }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <Text style={{ color: c.text, fontSize: 26, fontFamily: Type.display, letterSpacing: -0.6, fontVariant: ['tabular-nums'] }}>
+      <Text style={{ color: c.text, fontSize: 26, fontFamily: Type.display, fontVariant: ['tabular-nums'] }}>
         {value}
         {unit ? <Text style={{ fontSize: 16, fontFamily: Type.bodyMedium, color: c.textSecondary }}> {unit}</Text> : null}
       </Text>
@@ -231,25 +238,26 @@ function Fact({ value, unit, label }: { value: string; unit?: string; label: str
 const styles = StyleSheet.create({
   body: { paddingHorizontal: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', marginTop: Spacing.one },
   sub: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
-  hint: { position: 'absolute', top: 398, left: 0, right: 0, alignItems: 'center' },
-  hintText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
+  terrain: { borderRadius: Radius.lg, overflow: 'hidden' },
+  hint: { position: 'absolute', bottom: 12, left: 0, right: 0, alignItems: 'center' },
+  hintText: { color: 'rgba(255,255,255,0.85)', fontFamily: Type.bodyBold, fontSize: 13 },
   facts: { flexDirection: 'row', gap: Spacing.three },
   actions: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
-  fav: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: c.backgroundElement },
-  route: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.three, backgroundColor: c.backgroundElement, borderLeftWidth: 4, borderLeftColor: c.success, alignItems: 'flex-start' },
+  fav: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: c.backgroundElement },
+  route: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderLeftWidth: 5, borderLeftColor: c.success, alignItems: 'flex-start' },
   routeTag: { fontFamily: Type.bodyBold, fontSize: 15, marginTop: 1 },
-  betaCard: { gap: 12, padding: Spacing.three, backgroundColor: c.backgroundElement },
+  betaCard: { gap: 12, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: c.backgroundElement },
   betaHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  betaKicker: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
+  betaKicker: { color: c.text, fontFamily: Type.display, fontSize: 20 },
   betaAgo: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 14 },
   betaNote: { color: c.text, fontFamily: Type.body, fontSize: 17, lineHeight: 25 },
   betaBy: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   betaByText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, flexShrink: 1 },
   socialRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   socialText: { flex: 1, color: c.textSecondary, fontFamily: Type.body, fontSize: 15, lineHeight: 22 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 46, backgroundColor: c.backgroundElement },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, height: 46, borderRadius: 23, backgroundColor: c.backgroundElement },
   pillOn: { backgroundColor: c.accent },
-  pillText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 2 },
+  pillText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
   report: { gap: 8, paddingVertical: 12 },
   climb: { paddingVertical: 10, gap: 2 },
   extLink: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15, textDecorationLine: 'underline' },

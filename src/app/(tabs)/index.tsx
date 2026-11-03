@@ -1,13 +1,15 @@
 import { router } from 'expo-router';
 import { Fragment } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
 import { Mark } from '@/components/mark';
+import { PeakImage } from '@/components/peak-photo';
 import { AscentCard, Avatar, PlanCard } from '@/components/social';
 import { Welcome } from '@/components/welcome';
-import { BottomTabInset, Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { daysSince, ME, useStore } from '@/lib/store';
 
@@ -19,6 +21,7 @@ function whenWas(date: string) {
 }
 
 export default function FeedScreen() {
+  const { width } = useWindowDimensions();
   const store = useStore();
   const { me, feed, upcomingPlans, toLog, peakById, user, suggestions, follow, ascents, following } = store;
   if (!me.name) return <Welcome />;
@@ -29,6 +32,7 @@ export default function FeedScreen() {
   const pending = toLog();
   const fresh = ascents.filter((a) => a.beta?.surface && daysSince(a.date) <= 7 && (a.userId === ME || following.includes(a.userId))).length;
   const people = suggestions();
+  const cardW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.background }}>
@@ -47,13 +51,16 @@ export default function FeedScreen() {
           const others = p.memberIds.filter((m) => m !== ME).map((m) => user(m)?.name.split(' ')[0]);
           return (
             <Pressable key={p.id} onPress={() => router.push(`/plan/${p.id}`)} style={styles.prompt}>
-              <Text style={styles.promptTitle}>{peak?.name}, {whenWas(p.date)}</Text>
-              <Text style={styles.promptBody}>
-                How did it go? Log it once for you, {others.join(' and ')}, and say what the snow was like.
-              </Text>
-              <View style={styles.promptBtn}>
-                <Text style={styles.promptBtnText}>We made it up</Text>
-                <Icon name="arrow" size={18} color={c.accent} weight={2.2} />
+              <PeakImage peakId={p.peakId} width={cardW} height={300} />
+              <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} />
+              <View style={styles.promptText}>
+                <Text style={styles.promptKicker}>{whenWas(p.date)[0].toUpperCase() + whenWas(p.date).slice(1)} with {others.join(' and ')}</Text>
+                <Text style={styles.promptTitle}>How was {peak?.name}?</Text>
+                <Text style={styles.promptBody}>Log it once for everyone, and tell the next crew what the snow was like.</Text>
+                <View style={styles.promptBtn}>
+                  <Text style={styles.promptBtnText}>We made it up</Text>
+                  <Icon name="arrow" size={18} color={c.text} weight={2.2} />
+                </View>
               </View>
             </Pressable>
           );
@@ -69,8 +76,8 @@ export default function FeedScreen() {
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two }}>
           {soon.map((p) => (
-            <View key={p.id} style={{ width: 316 }}>
-              <PlanCard plan={p} compact />
+            <View key={p.id} style={{ width: 300 }}>
+              <PlanCard plan={p} compact width={300} />
             </View>
           ))}
           <Pressable onPress={() => router.push('/plan/new')} style={styles.newPlan}>
@@ -126,26 +133,27 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  signBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.accent, paddingHorizontal: 14, minHeight: 40 },
-  signText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 2 },
+  signBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.accent, paddingHorizontal: 16, minHeight: 40, borderRadius: 99 },
+  signText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 15 },
   page: { paddingHorizontal: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: Spacing.four, marginBottom: Spacing.two },
-  section: { color: c.text, fontFamily: Type.display, fontSize: 26, letterSpacing: -0.6 },
+  section: { color: c.text, fontFamily: Type.display, fontSize: 26 },
   link: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15 },
   freshLine: { color: c.success, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 4 },
-  // The one full colour field on the screen: the thing to do next.
-  prompt: { marginHorizontal: Spacing.three, marginTop: Spacing.two, padding: Spacing.four, backgroundColor: c.accent, gap: 8 },
-  promptTitle: { color: c.accentText, fontFamily: Type.display, fontSize: 26, lineHeight: 28, letterSpacing: -0.6 },
-  promptBody: { color: 'rgba(255,255,255,0.86)', fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
-  promptBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', backgroundColor: c.accentText, paddingHorizontal: 16, minHeight: 44, marginTop: 8 },
-  promptBtnText: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 16, marginTop: 2 },
-  newPlan: { width: 120, backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  prompt: { marginHorizontal: Spacing.three, marginTop: Spacing.two, borderRadius: Radius.lg, overflow: 'hidden', alignSelf: 'center' },
+  promptText: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: Spacing.four, gap: 6 },
+  promptKicker: { color: 'rgba(255,255,255,0.9)', fontFamily: Type.bodyBold, fontSize: 15 },
+  promptTitle: { color: '#fff', fontFamily: Type.display, fontSize: 30, lineHeight: 34 },
+  promptBody: { color: 'rgba(255,255,255,0.88)', fontFamily: Type.body, fontSize: 16, lineHeight: 22 },
+  promptBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', backgroundColor: '#fff', paddingHorizontal: 18, minHeight: 44, borderRadius: 99, marginTop: 8 },
+  promptBtnText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
+  newPlan: { width: 130, borderRadius: Radius.md, backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center', gap: 6 },
   newPlanText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 14 },
   feed: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  suggest: { gap: Spacing.three, paddingVertical: Spacing.four, marginBottom: Spacing.three, backgroundColor: c.backgroundElement },
-  person: { width: 152, padding: 14, backgroundColor: c.background, alignItems: 'flex-start', gap: 6 },
+  suggest: { gap: Spacing.three, paddingVertical: Spacing.four, marginBottom: Spacing.four, backgroundColor: c.backgroundElement },
+  person: { width: 156, padding: 14, borderRadius: Radius.md, backgroundColor: c.background, alignItems: 'flex-start', gap: 6 },
   personName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 4 },
   personMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
-  followSmall: { marginTop: 6, backgroundColor: c.text, paddingHorizontal: 16, minHeight: 36, justifyContent: 'center' },
-  followSmallText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 1 },
+  followSmall: { marginTop: 6, backgroundColor: c.accent, paddingHorizontal: 18, minHeight: 36, borderRadius: 99, justifyContent: 'center' },
+  followSmallText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 14 },
 });

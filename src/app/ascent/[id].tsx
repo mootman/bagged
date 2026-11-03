@@ -5,7 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { Backdrop } from '@/components/backdrop';
 import { Avatar, FacePile, KudosButton } from '@/components/social';
 import { Button } from '@/components/ui';
-import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { ago, formatDate, ME, useStore } from '@/lib/store';
 
 const c = Colors.dark;
@@ -41,7 +41,7 @@ export default function AscentScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title: '', headerTransparent: true, headerStyle: { backgroundColor: 'transparent' } }} />
+      <Stack.Screen options={{ title: '', headerTransparent: true, headerTintColor: '#fff', headerStyle: { backgroundColor: 'transparent' } }} />
       <ScrollView contentContainerStyle={{ paddingBottom: Spacing.six }} keyboardShouldPersistTaps="handled">
         <Backdrop peakId={peak.id} photoId={mine ? (a.photoId ?? photoFor.get(peak.id)) : undefined} height={360}>
           <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
@@ -138,27 +138,27 @@ export default function AscentScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4 },
+  kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 17 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 38, lineHeight: 44 },
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   who: { flex: 1, color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
   note: { color: c.text, fontFamily: Type.body, fontSize: 18, lineHeight: 27 },
-  betaBox: { padding: Spacing.three, gap: 10, backgroundColor: c.backgroundElement },
-  betaTitle: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
+  betaBox: { padding: Spacing.three, gap: 10, borderRadius: Radius.md, backgroundColor: c.backgroundElement },
+  betaTitle: { color: c.text, fontFamily: Type.display, fontSize: 20 },
   betaRow: { flexDirection: 'row', justifyContent: 'space-between' },
   betaKey: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15 },
   betaVal: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   kudosText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15, flex: 1 },
-  section: { color: c.text, fontFamily: Type.display, fontSize: 24, letterSpacing: -0.5, marginTop: Spacing.two },
+  section: { color: c.text, fontFamily: Type.display, fontSize: 24, marginTop: Spacing.two },
   empty: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16 },
   comment: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   cName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
   cAgo: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
   cText: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: { flex: 1, backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 46, fontFamily: Type.body, fontSize: 16 },
-  send: { backgroundColor: c.text, paddingHorizontal: 16, minHeight: 46, justifyContent: 'center' },
-  sendText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 15, marginTop: 2 },
+  input: { flex: 1, backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 18, borderRadius: 99, minHeight: 46, fontFamily: Type.body, fontSize: 16 },
+  send: { backgroundColor: c.accent, paddingHorizontal: 18, minHeight: 46, borderRadius: 99, justifyContent: 'center' },
+  sendText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 15 },
   footer: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, textAlign: 'center' },
 });

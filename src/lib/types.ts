@@ -10,6 +10,9 @@ export type Peak = {
   approx?: boolean;
 };
 
+/** A bundled photo of a peak, with the credit its license asks for. */
+export type PeakPhoto = { src: number; author: string; license: string; source: string; w: number; h: number };
+
 /** A located moment: a photo, or a GPS track point. */
 export type GeoPoint = {
   lat: number;

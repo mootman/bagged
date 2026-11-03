@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Icon } from '@/components/icon';
-import { RidgelineArt } from '@/components/ridgeline-art';
-import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { PeakImage, photosFor, pickIndex } from '@/components/peak-photo';
+import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success, tap } from '@/lib/haptics';
 import { ago, daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
 import type { Ascent, Beta, Plan, User } from '@/lib/types';
@@ -137,10 +137,12 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
   if (!peak) return null;
 
   const cardW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
+  const photoH = Math.round(cardW * 0.78);
   const lead = user(ascent.userId);
   const others = climbers.filter((u) => u !== ascent.userId).map((u) => (u === ME ? 'you' : (user(u)?.name.split(' ')[0] ?? 'someone')));
   const wanted = wantsOf(ME).includes(peak.id);
   const fresh = daysSince(ascent.date) <= 7;
+  const pick = pickIndex(ascent.id, photosFor(peak.id).length);
 
   const onMediaPress = () => {
     const now = Date.now();
@@ -160,40 +162,23 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
   return (
     <View style={styles.card}>
       <Pressable onPress={() => router.push(`/user/${ascent.userId}`)} style={styles.cardHead}>
-        <FacePile ids={climbers} size={36} max={3} />
+        <FacePile ids={climbers} size={40} max={3} />
         <View style={{ flex: 1 }}>
           <Text style={styles.who} numberOfLines={1}>
             {ascent.userId === ME ? 'You' : lead?.name}
             {others.length ? <Text style={styles.whoWith}> with {others.join(' and ')}</Text> : null}
           </Text>
           <Text style={styles.meta}>
-            {milestone(ascent, ascents)}, {ago(ascent.createdAt)} ago
+            {ago(ascent.createdAt)} ago{lead?.home && ascent.userId !== ME ? `, from ${lead.home}` : ''}
           </Text>
-        </View>
-      </Pressable>
-
-      <Pressable onPress={onMediaPress} style={{ paddingHorizontal: Spacing.three }}>
-        <View style={{ height: 200, overflow: 'hidden', backgroundColor: '#F6F7F3' }}>
-          <RidgelineArt peakId={peak.id} lit width={cardW} height={200} count={26} top={0.1} bottom={0.95} amplitude={0.32} paper="#F6F7F3" />
-          <Animated.View pointerEvents="none" style={[styles.burst, burstStyle]}>
-            <Icon name="summit" size={88} filled color={c.accent} />
-          </Animated.View>
         </View>
       </Pressable>
 
       <View style={styles.cardBody}>
-        <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
+        <Pressable onPress={() => router.push(`/peak/${peak.id}`)} style={{ gap: 2 }}>
+          <Text style={styles.milestone}>{milestone(ascent, ascents)}</Text>
           <Text style={styles.peakName}>{peak.name}</Text>
-          <Text style={styles.peakMeta}>
-            {peak.elevationFt.toLocaleString()} ft{ascent.beta?.route ? `, ${ascent.beta.route}` : ''}
-          </Text>
         </Pressable>
-        {ascent.beta?.surface && (
-          <View style={{ gap: 8 }}>
-            <Text style={[styles.betaLabel, fresh && { color: c.success }]}>{fresh ? `Fresh conditions, ${daysSince(ascent.date) === 0 ? 'today' : `${daysSince(ascent.date)} days ago`}` : 'Conditions'}</Text>
-            <BetaChips beta={ascent.beta} />
-          </View>
-        )}
         {ascent.note ? (
           <Text style={styles.note} numberOfLines={4}>
             {ascent.note}
@@ -201,13 +186,30 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
         ) : null}
       </View>
 
+      <Pressable onPress={onMediaPress} style={{ paddingHorizontal: Spacing.three }}>
+        <PeakImage peakId={peak.id} photoId={ascent.photoId} index={pick} width={cardW} height={photoH} radius={Radius.md} credit />
+        <Animated.View pointerEvents="none" style={[styles.burst, { top: photoH / 2 - 48 }, burstStyle]}>
+          <Icon name="summit" size={96} filled color="#fff" />
+        </Animated.View>
+      </Pressable>
+
+      {ascent.beta?.surface && (
+        <View style={[styles.cardBody, { paddingTop: 12, gap: 8 }]}>
+          <Text style={[styles.betaLabel, fresh && { color: c.success }]}>
+            {fresh ? `Conditions ${daysSince(ascent.date) === 0 ? 'today' : daysSince(ascent.date) === 1 ? 'yesterday' : `${daysSince(ascent.date)} days ago`}` : 'Conditions'}
+            {ascent.beta.route ? <Text style={styles.betaRoute}>, {ascent.beta.route}</Text> : null}
+          </Text>
+          <BetaChips beta={ascent.beta} />
+        </View>
+      )}
+
       <View style={styles.actions}>
         <KudosButton ascent={ascent} />
         <Pressable onPress={() => router.push(`/ascent/${ascent.id}`)} hitSlop={10} style={styles.action} accessibilityLabel="Comments">
           <Icon name="comment" />
           <Text style={styles.actionText}>{ascent.comments.length || ''}</Text>
         </Pressable>
-        {ascent.kudos.length > 0 && <FacePile ids={ascent.kudos} size={22} max={4} />}
+        {ascent.kudos.length > 0 && <FacePile ids={ascent.kudos} size={24} max={4} />}
         <View style={{ flex: 1 }} />
         {ascent.userId !== ME && (
           <Pressable
@@ -218,7 +220,7 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
             hitSlop={8}
             style={[styles.want, wanted && { backgroundColor: c.accent }]}>
             <Icon name="bookmark" size={18} filled={wanted} color={wanted ? c.accentText : c.text} />
-            <Text style={[styles.wantText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to climb'}</Text>
+            <Text style={[styles.wantText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to go'}</Text>
           </Pressable>
         )}
       </View>
@@ -230,10 +232,12 @@ export function seatsLeft(p: Plan) {
   return Math.max(0, p.size - p.memberIds.length);
 }
 
-export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
+export function PlanCard({ plan, compact, width }: { plan: Plan; compact?: boolean; width?: number }) {
+  const { width: screenW } = useWindowDimensions();
   const { user, peakById, requestJoin } = useStore();
   const peak = peakById.get(plan.peakId);
   if (!peak) return null;
+  const w = width ?? Math.min(screenW, MaxContentWidth) - Spacing.three * 2;
   const [dow, mon, dnum] = formatPlanDate(plan.date).replace(',', '').split(' ');
   const host = user(plan.hostId);
   const going = plan.memberIds.includes(ME);
@@ -241,18 +245,21 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
   const open = seatsLeft(plan);
 
   return (
-    <Pressable onPress={() => router.push(`/plan/${plan.id}`)} style={({ pressed }) => [styles.plan, pressed && { backgroundColor: c.backgroundSelected }]}>
-      <View style={styles.planDate}>
-        <Text style={styles.planDow}>{dow}</Text>
-        <Text style={styles.planDay}>{dnum}</Text>
-        <Text style={styles.planMon}>{mon}</Text>
+    <Pressable onPress={() => router.push(`/plan/${plan.id}`)} style={({ pressed }) => [styles.plan, pressed && { opacity: 0.9 }]}>
+      <View>
+        <PeakImage peakId={peak.id} index={pickIndex(plan.id, photosFor(peak.id).length)} width={w} height={compact ? 130 : 160} />
+        <View style={styles.planDate}>
+          <Text style={styles.planDow}>{dow}</Text>
+          <Text style={styles.planDay}>{dnum}</Text>
+          <Text style={styles.planMon}>{mon}</Text>
+        </View>
       </View>
-      <View style={{ flex: 1, gap: 4 }}>
+      <View style={styles.planBody}>
         <Text style={styles.planPeak} numberOfLines={1}>
           {peak.name}
         </Text>
         <Text style={styles.planWho}>
-          {plan.hostId === ME ? 'Your plan' : `${host?.name.split(' ')[0]} is going`}, starts {plan.start.replace(/^0/, '')}
+          {plan.hostId === ME ? 'Your plan' : `${host?.name.split(' ')[0]} is going`}, at the trailhead by {plan.start.replace(/^0/, '')}
         </Text>
         {!compact && plan.note ? (
           <Text style={styles.planNote} numberOfLines={2}>
@@ -260,13 +267,13 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
           </Text>
         ) : null}
         <View style={styles.planFoot}>
-          <FacePile ids={plan.memberIds} size={26} max={5} />
+          <FacePile ids={plan.memberIds} size={28} max={5} />
           <Text numberOfLines={1} style={[styles.seats, open === 0 && { color: c.textSecondary }]}>
-            {open ? `${open} open` : 'Full'}
+            {open ? `${open} open ${open === 1 ? 'seat' : 'seats'}` : 'Full'}
           </Text>
           <View style={{ flex: 1 }} />
           {going ? (
-            <Text style={styles.going}>Going</Text>
+            <Text style={styles.going}>You&apos;re going</Text>
           ) : requested ? (
             <Text style={styles.requested}>Asked</Text>
           ) : open > 0 ? (
@@ -288,37 +295,39 @@ export function PlanCard({ plan, compact }: { plan: Plan; compact?: boolean }) {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: c.backgroundElement },
-  swatch: { width: 9, height: 9 },
-  chipText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13, marginTop: 1 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 99, backgroundColor: c.backgroundSelected },
+  swatch: { width: 8, height: 8, borderRadius: 4 },
+  chipText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingRight: 4 },
-  actionText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 15, minWidth: 8, fontVariant: ['tabular-nums'] },
-  card: { paddingBottom: Spacing.three, marginBottom: Spacing.three, backgroundColor: c.background },
-  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.three, paddingVertical: 12 },
+  actionText: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 15, minWidth: 8 },
+  card: { paddingBottom: Spacing.two, marginBottom: Spacing.four },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: Spacing.three, paddingBottom: 10 },
   who: { color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
   whoWith: { color: c.textSecondary, fontFamily: Type.body },
   meta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, marginTop: 1 },
-  burst: { position: 'absolute', alignSelf: 'center', top: 56 },
-  cardBody: { paddingHorizontal: Spacing.three, paddingTop: 14, gap: 12 },
-  peakName: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 28, letterSpacing: -0.6 },
-  peakMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, marginTop: 2, fontVariant: ['tabular-nums'] },
-  betaLabel: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 13 },
-  note: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 24 },
+  burst: { position: 'absolute', alignSelf: 'center' },
+  cardBody: { paddingHorizontal: Spacing.three, paddingBottom: 12, gap: 8 },
+  milestone: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 14 },
+  peakName: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 30 },
+  betaLabel: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 14 },
+  betaRoute: { color: c.textSecondary, fontFamily: Type.body },
+  note: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: Spacing.three, paddingTop: 4 },
-  want: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, minHeight: 40, backgroundColor: c.backgroundElement },
-  wantText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 14, marginTop: 1 },
-  plan: { flexDirection: 'row', gap: 14, padding: 14, backgroundColor: c.backgroundElement },
-  planDate: { width: 52, alignItems: 'center', paddingVertical: 8, backgroundColor: c.background },
-  planDow: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 13 },
-  planDay: { color: c.text, fontFamily: Type.display, fontSize: 28, lineHeight: 32, fontVariant: ['tabular-nums'] },
-  planMon: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 13 },
-  planPeak: { color: c.text, fontFamily: Type.display, fontSize: 20, letterSpacing: -0.4 },
+  want: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, minHeight: 38, borderRadius: 99, backgroundColor: c.backgroundElement },
+  wantText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 14 },
+  plan: { borderRadius: Radius.md, overflow: 'hidden', backgroundColor: c.backgroundElement },
+  planDate: { position: 'absolute', top: 10, left: 10, width: 50, alignItems: 'center', paddingVertical: 6, borderRadius: Radius.sm, backgroundColor: '#fff' },
+  planDow: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 12 },
+  planDay: { color: c.text, fontFamily: Type.display, fontSize: 24, lineHeight: 27 },
+  planMon: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 12 },
+  planBody: { padding: 14, gap: 4 },
+  planPeak: { color: c.text, fontFamily: Type.display, fontSize: 21 },
   planWho: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
-  planNote: { color: c.text, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
-  planFoot: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  planNote: { color: c.text, fontFamily: Type.body, fontSize: 15, lineHeight: 21, marginTop: 2 },
+  planFoot: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
   seats: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 14 },
   going: { color: c.success, fontFamily: Type.bodyBold, fontSize: 14 },
   requested: { color: c.gold, fontFamily: Type.bodyBold, fontSize: 14 },
-  join: { backgroundColor: c.text, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
-  joinText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 1 },
+  join: { backgroundColor: c.accent, paddingHorizontal: 16, minHeight: 36, borderRadius: 99, justifyContent: 'center' },
+  joinText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 14 },
 });

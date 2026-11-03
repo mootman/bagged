@@ -7,7 +7,7 @@ import { BetaPicker } from '@/components/pickers';
 import { Icon } from '@/components/icon';
 import { Avatar, BetaChips, seatsLeft } from '@/components/social';
 import { Button } from '@/components/ui';
-import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
+import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
 import type { Beta } from '@/lib/types';
@@ -39,7 +39,7 @@ export default function PlanScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
-      <Stack.Screen options={{ title: '', headerTransparent: true, headerStyle: { backgroundColor: 'transparent' } }} />
+      <Stack.Screen options={{ title: '', headerTransparent: true, headerTintColor: '#fff', headerStyle: { backgroundColor: 'transparent' } }} />
       <ScrollView contentContainerStyle={{ paddingBottom: Spacing.six }} keyboardShouldPersistTaps="handled">
         <Backdrop peakId={peak.id} height={340}>
           <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
@@ -158,12 +158,12 @@ export default function PlanScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
-  kicker: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 17 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 44, lineHeight: 46, letterSpacing: -1.4 },
-  hostNote: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: Spacing.three, backgroundColor: c.backgroundElement },
+  kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 17 },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 38, lineHeight: 44 },
+  hostNote: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', padding: Spacing.three, borderRadius: Radius.md, backgroundColor: c.backgroundElement },
   noteText: { flex: 1, color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   crewHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  section: { color: c.text, fontFamily: Type.display, fontSize: 24, letterSpacing: -0.5 },
+  section: { color: c.text, fontFamily: Type.display, fontSize: 24 },
   sub: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
   seats: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15 },
   crew: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
@@ -173,11 +173,11 @@ const styles = StyleSheet.create({
   openSeat: { width: 54, height: 54, borderRadius: 27, backgroundColor: c.backgroundElement, alignItems: 'center', justifyContent: 'center' },
   label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
   request: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  approve: { backgroundColor: c.text, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
-  approveText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14 },
-  logBox: { gap: Spacing.three, paddingVertical: Spacing.three, borderTopWidth: 4, borderTopColor: c.accent },
-  note: { backgroundColor: c.backgroundElement, color: c.text, padding: 14, minHeight: 80, fontFamily: Type.body, fontSize: 16, textAlignVertical: 'top' },
-  pending: { padding: 14, backgroundColor: c.backgroundElement, borderLeftWidth: 4, borderLeftColor: c.gold },
+  approve: { backgroundColor: c.accent, paddingHorizontal: 16, minHeight: 36, borderRadius: 99, justifyContent: 'center' },
+  approveText: { color: c.accentText, fontFamily: Type.bodyBold, fontSize: 14 },
+  logBox: { gap: Spacing.three, paddingVertical: Spacing.two },
+  note: { backgroundColor: c.backgroundElement, color: c.text, padding: 14, borderRadius: Radius.md, minHeight: 80, fontFamily: Type.body, fontSize: 16, textAlignVertical: 'top' },
+  pending: { padding: 14, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderLeftWidth: 5, borderLeftColor: c.gold },
   pendingText: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 15 },
   doneText: { color: c.success, fontFamily: Type.bodyBold, fontSize: 16 },
   report: { gap: 8, paddingVertical: 12 },

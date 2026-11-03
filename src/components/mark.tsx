@@ -10,8 +10,8 @@ const c = Colors.dark;
 export function Mark({ color = c.text, size = 20 }: { color?: string; size?: number }) {
   return (
     <View style={styles.row}>
-      <Icon name="summit" size={size * 1.1} filled color={c.accent} weight={1.2} />
-      <Text style={[styles.name, { color, fontSize: size, letterSpacing: -size * 0.02, marginTop: size * 0.15 }]}>{APP_NAME}</Text>
+      <Icon name="summit" size={size * 1.1} filled color={color === c.text ? c.accent : color} weight={1.2} />
+      <Text style={[styles.name, { color, fontSize: size, marginTop: size * 0.05 }]}>{APP_NAME}</Text>
     </View>
   );
 }

@@ -86,8 +86,8 @@ export default function NewAscentScreen() {
 const styles = StyleSheet.create({
   page: { padding: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingBottom: Spacing.six },
   kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
-  title: { color: c.text, fontFamily: Type.display, fontSize: 40, letterSpacing: -1.2 },
-  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 14, minHeight: 48, fontFamily: Type.bodyMedium, fontSize: 16, fontVariant: ['tabular-nums'] },
+  title: { color: c.text, fontFamily: Type.display, fontSize: 40 },
+  input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 16, borderRadius: 10, minHeight: 48, fontFamily: Type.bodyMedium, fontSize: 16, fontVariant: ['tabular-nums'] },
   note: { minHeight: 90, textAlignVertical: 'top', fontFamily: Type.body, paddingTop: 12 },
   hint: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
   warn: { color: c.danger, fontFamily: Type.bodyMedium, fontSize: 14 },

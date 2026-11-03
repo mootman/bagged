@@ -22,11 +22,16 @@ export default function YouScreen() {
           </Pressable>
         }
         footer={
-          demo ? (
-            <View style={styles.demo}>
-              <Text style={styles.demoText}>The friends, plans and conditions here are a sample crew until accounts go live.</Text>
-            </View>
-          ) : null
+          <View style={{ gap: 12 }}>
+            {demo ? (
+              <View style={styles.demo}>
+                <Text style={styles.demoText}>The friends, plans and conditions here are a sample crew until accounts go live.</Text>
+              </View>
+            ) : null}
+            <Pressable onPress={() => router.push('/credits')} hitSlop={8}>
+              <Text style={styles.creditsLink}>Photo credits</Text>
+            </Pressable>
+          </View>
         }
       />
     </SafeAreaView>
@@ -34,8 +39,9 @@ export default function YouScreen() {
 }
 
 const styles = StyleSheet.create({
-  scan: { backgroundColor: c.text, paddingHorizontal: 14, minHeight: 38, justifyContent: 'center' },
-  scanText: { color: c.background, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 2 },
-  demo: { backgroundColor: c.backgroundElement, padding: 14, marginTop: 8 },
+  scan: { backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 16, minHeight: 38, borderRadius: 99, justifyContent: 'center' },
+  scanText: { color: c.text, fontFamily: Type.bodyBold, fontSize: 14 },
+  demo: { backgroundColor: c.backgroundElement, padding: 14, borderRadius: 14, marginTop: 8 },
+  creditsLink: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15 },
   demoText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
 });

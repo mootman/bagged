@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   label: { color: c.text, fontFamily: Type.bodyBold, fontSize: 15 },
   value: { color: c.text, fontFamily: Type.display, fontSize: 20 },
   hit: { height: 34, justifyContent: 'center' },
-  track: { height: 8 },
+  track: { height: 8, borderRadius: 4 },
   knob: {
     position: 'absolute',
     top: 4,
@@ -80,7 +80,11 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 3,
-    borderColor: c.text,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   tick: { color: c.textSecondary, fontFamily: Type.body, fontSize: 12 },
 });

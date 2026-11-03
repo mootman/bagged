@@ -32,14 +32,14 @@ Intentionally left out for now: crews and planning, the want-to-climb list, live
 
 ## Visual system
 
-The look comes from the subject: a USGS topo sheet and Colorado trail signage, not a generic dark app.
+Photo-first, like the outdoor apps people already trust (AllTrails, Strava, Komoot). The mountains are the colour.
 
-- **Paper and ink.** Pale topo-sheet ground (`#ECEEE8`). Surfaces separate by tone, not by borders or shadows.
-- **One ink color.** Ballpoint blue (`#1B4FCB`) marks what you've climbed and the one action that matters on a screen. Unclimbed stays pencil grey.
-- **Overpass**, an open-source cut of Highway Gothic, the typeface on US trail and highway signs. Five sizes, far apart. Sentence case everywhere.
-- **The art is the data.** Ridgelines are traced from real elevation tiles. Summits use the topo map's triangle. The 3D relief and the light slider stay as the one showpiece interaction.
-- **People are initials** on a pale tint of their own hue, the same every time.
-- **Square corners.** No pills, no glow, no gradients except the sky.
+- **Photos everywhere.** Every peak ships with real photos from Wikimedia Commons, each credited with author and license on the photo itself (tap to open the source). Your own summit photo replaces them wherever it exists.
+- **Warm white page, spruce green action.** `#FBFAF7` ground, `#24563F` for the one button that matters and for peaks you've climbed.
+- **Source Serif 4** for place names and headlines, like a field guide. **Nunito Sans** for everything you read and tap.
+- **Soft corners**: rounded photo cards, pill buttons and chips.
+- **Kept from before:** the 3D relief with the light slider (now its own section on each peak page), the ridgeline drawn from real terrain (the signing moment, and the fallback when a peak has no photo), the stamp, tilt and count-up.
+- Photos: `scripts/write-photo-index.py` turns the fetched list into `src/data/peak-photos.generated.ts`. Before launch, swap in climbers' own photos as they arrive and re-check every license.
 
 ## Design principles
 

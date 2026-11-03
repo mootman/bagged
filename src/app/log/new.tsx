@@ -2,13 +2,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { PhotoPicker, RoutePicker, StarInput, WinterToggle } from '@/components/log-bits';
 import { PartnerEditor } from '@/components/partner-editor';
 import { BetaPicker, Field, FriendPicker } from '@/components/pickers';
 import { Button } from '@/components/ui';
 import { Colors, MaxContentWidth, Spacing, Type } from '@/constants/theme';
 import { localDay } from '@/lib/detect';
 import { success } from '@/lib/haptics';
-import { daysSince, ME, useStore } from '@/lib/store';
+import { OTHER_ROUTE_ID, routesFor } from '@/data/routes';
+import { daysSince, isWinter, ME, useStore } from '@/lib/store';
 import { withClaimLinks } from '@/lib/tagging';
 import type { Beta } from '@/lib/types';
 
@@ -25,6 +27,12 @@ export default function NewAscentScreen() {
   const [guests, setGuests] = useState<string[]>([]);
   const [beta, setBeta] = useState<Beta>({});
   const [note, setNote] = useState('');
+  const [rating, setRating] = useState<number | undefined>();
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [winter, setWinter] = useState(() => isWinter(localDay(Date.now())));
+  const [routeId, setRouteId] = useState<string | undefined>(() => routesFor(peakId)[0]?.id);
+  const [miles, setMiles] = useState('');
+  const [gain, setGain] = useState('');
   const [saving, setSaving] = useState(false);
 
   if (!peak) return null;
@@ -43,7 +51,22 @@ export default function NewAscentScreen() {
       } catch {
         Alert.alert('Saved without links', "Couldn't create invite links right now.");
       }
-      const mine = logAscent({ peakId: peak.id, date, withIds, guests: tagged, note: note.trim(), beta: beta.surface ? beta : undefined, source: 'manual' });
+      const other = routeId === OTHER_ROUTE_ID;
+      const mine = logAscent({
+        peakId: peak.id,
+        date,
+        withIds,
+        guests: tagged,
+        note: note.trim(),
+        beta: beta.surface ? { ...beta } : undefined,
+        source: 'manual',
+        rating,
+        winter,
+        photos: photos.length ? photos : undefined,
+        routeId,
+        customMiles: other ? Number(miles) || undefined : undefined,
+        customGainFt: other ? Number(gain) || undefined : undefined,
+      });
       success();
       router.replace({ pathname: '/signed/[id]', params: { id: mine.id } });
     } finally {
@@ -58,27 +81,49 @@ export default function NewAscentScreen() {
         <Text style={styles.kicker}>{peak.elevationFt.toLocaleString()} ft, {peak.range} Range</Text>
       </View>
 
-      <Field label="Date">
-        <TextInput value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={c.textMuted} autoCapitalize="none" style={[styles.input, !dateOk && { borderLeftWidth: 4, borderLeftColor: c.danger }]} />
+      <Field label="When">
+        <TextInput
+          value={date}
+          onChangeText={(t) => {
+            setDate(t);
+            if (DATE_RE.test(t)) setWinter(isWinter(t));
+          }}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={c.textMuted}
+          autoCapitalize="none"
+          style={[styles.input, !dateOk && { borderLeftWidth: 4, borderLeftColor: c.danger }]}
+        />
         {duplicate && <Text style={styles.warn}>You already logged {peak.name} on this day.</Text>}
+        <WinterToggle value={winter} onChange={setWinter} />
       </Field>
 
-      <Field label="Who was up there with you">
-        <FriendPicker friends={friends} selected={withIds} wantsIds={friendsWhoClimbed(peak.id).map((u) => u.id)} onToggle={(id) => setWithIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />
-        <Text style={styles.hint}>Friends you tag get this summit on their register too. No one types it twice.</Text>
+      <Field label="Route">
+        <RoutePicker routes={routesFor(peak.id)} value={routeId} onChange={setRouteId} miles={miles} gain={gain} onMiles={setMiles} onGain={setGain} peakName={(id) => peakById.get(id)?.name ?? id} />
+      </Field>
+
+      <Field label="Your rating">
+        <StarInput value={rating} onChange={setRating} />
+      </Field>
+
+      <Field label="How it went">
+        <TextInput value={note} onChangeText={setNote} placeholder="The views, the scary bit, what you'd tell a friend going next" placeholderTextColor={c.textMuted} multiline style={[styles.input, styles.note]} />
+      </Field>
+
+      <Field label="Photos">
+        <PhotoPicker photos={photos} onChange={setPhotos} />
+      </Field>
+
+      <Field label="Who was with you">
+        {friends.length > 0 && <FriendPicker friends={friends} selected={withIds} wantsIds={friendsWhoClimbed(peak.id).map((u) => u.id)} onToggle={(id) => setWithIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))} />}
         <PartnerEditor names={guests} onChange={setGuests} />
-        <Text style={styles.hint}>Not on the app yet? Add their name and send them an invite link.</Text>
+        <Text style={styles.hint}>Add their names. Once they join, the climb lands on their profile too.</Text>
       </Field>
 
-      <Field label={fresh ? 'Conditions. People are planning around this.' : 'Conditions, if you remember'}>
+      <Field label={fresh ? 'Conditions. Other climbers check this before they go.' : 'Conditions, if you remember'}>
         <BetaPicker beta={beta} onChange={setBeta} />
       </Field>
 
-      <Field label="Note">
-        <TextInput value={note} onChangeText={setNote} placeholder="How it went, what you'd tell a friend going next" placeholderTextColor={c.textMuted} multiline style={[styles.input, styles.note]} />
-      </Field>
-
-      <Button title={withIds.length ? `Sign it for ${withIds.length + 1} of you` : 'Sign the register'} loading={saving} disabled={!dateOk || duplicate} onPress={save} />
+      <Button title={withIds.length ? `Log it for ${withIds.length + 1} of you` : 'Log this climb'} loading={saving} disabled={!dateOk || duplicate} onPress={save} />
     </ScrollView>
   );
 }
@@ -88,7 +133,7 @@ const styles = StyleSheet.create({
   kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
   title: { color: c.text, fontFamily: Type.display, fontSize: 40 },
   input: { backgroundColor: c.backgroundElement, color: c.text, paddingHorizontal: 16, borderRadius: 10, minHeight: 48, fontFamily: Type.bodyMedium, fontSize: 16, fontVariant: ['tabular-nums'] },
-  note: { minHeight: 90, textAlignVertical: 'top', fontFamily: Type.body, paddingTop: 12 },
+  note: { minHeight: 110, textAlignVertical: 'top', fontFamily: Type.body, paddingTop: 12 },
   hint: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 20 },
   warn: { color: c.danger, fontFamily: Type.bodyMedium, fontSize: 14 },
 });

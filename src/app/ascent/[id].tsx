@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Backdrop } from '@/components/backdrop';
+import { Icon } from '@/components/icon';
+import { routeLine, Stars } from '@/components/log-bits';
+import { OTHER_ROUTE_ID, routeById } from '@/data/routes';
 import { Avatar, FacePile, KudosButton } from '@/components/social';
 import { Button } from '@/components/ui';
 import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
@@ -12,7 +15,7 @@ const c = Colors.dark;
 
 export default function AscentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { ascents, peakById, user, addComment, removeAscent, photoFor } = useStore();
+  const { ascents, peakById, user, addComment, removeAscent, photoFor, displayName } = useStore();
   const [draft, setDraft] = useState('');
   const a = ascents.find((x) => x.id === id);
   const peak = a && peakById.get(a.peakId);
@@ -22,8 +25,8 @@ export default function AscentScreen() {
   const mine = a.userId === ME;
   const crew = [a.userId, ...a.withIds];
   const b = a.beta;
+  const route = routeById(a.routeId);
   const rows: [string, string | undefined][] = [
-    ['Route', b?.route],
     ['Surface', b?.surface],
     ['Traction', b?.traction],
     ['Wind', b?.wind],
@@ -43,18 +46,33 @@ export default function AscentScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen options={{ title: '', headerTransparent: true, headerTintColor: '#fff', headerStyle: { backgroundColor: 'transparent' } }} />
       <ScrollView contentContainerStyle={{ paddingBottom: Spacing.six }} keyboardShouldPersistTaps="handled">
-        <Backdrop peakId={peak.id} photoId={mine ? (a.photoId ?? photoFor.get(peak.id)) : undefined} height={360}>
+        <Backdrop peakId={peak.id} photoId={mine ? (a.photoId ?? photoFor.get(peak.id)) : undefined} uris={a.photos} height={380}>
           <Pressable onPress={() => router.push(`/peak/${peak.id}`)}>
             <Text style={styles.title}>{peak.name}</Text>
           </Pressable>
           <Text style={styles.kicker}>{formatDate(a.date)}</Text>
+          <View style={styles.facts}>
+            {a.rating ? <Stars value={a.rating} size={20} /> : null}
+            {a.winter ? (
+              <View style={styles.winterTag}>
+                <Icon name="snow" size={14} color="#3E6A8A" weight={2.2} />
+                <Text style={styles.winterTagText}>Winter ascent</Text>
+              </View>
+            ) : null}
+          </View>
+          {route ? <Text style={styles.route}>{route.name}: {routeLine(route)}</Text> : null}
+          {a.routeId === OTHER_ROUTE_ID && (a.customMiles || a.customGainFt) ? (
+            <Text style={styles.route}>
+              Their own route: {a.customMiles ?? '?'} mi, {(a.customGainFt ?? 0).toLocaleString()} ft gain
+            </Text>
+          ) : null}
         </Backdrop>
 
         <View style={styles.page}>
           <Pressable onPress={() => router.push(`/user/${a.userId}`)} style={styles.whoRow}>
             <FacePile ids={crew} size={36} max={4} />
             <Text style={styles.who}>
-              {mine ? 'You' : who?.name}
+              {displayName(a.userId)}
               {a.withIds.length ? <Text style={{ color: c.textSecondary, fontFamily: Type.body }}> with {a.withIds.map((u) => (u === ME ? 'you' : user(u)?.name.split(' ')[0])).join(', ')}</Text> : null}
               {a.guests.length ? <Text style={{ color: c.textSecondary, fontFamily: Type.body }}> + {a.guests.map((g) => g.name).join(', ')}</Text> : null}
             </Text>
@@ -138,6 +156,10 @@ export default function AscentScreen() {
 
 const styles = StyleSheet.create({
   page: { paddingHorizontal: Spacing.three, gap: Spacing.three, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
+  facts: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6 },
+  winterTag: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: '#E1EAF1' },
+  winterTagText: { color: '#3E6A8A', fontFamily: Type.bodyBold, fontSize: 13 },
+  route: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15, marginTop: 4 },
   kicker: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 17 },
   title: { color: c.text, fontFamily: Type.display, fontSize: 38, lineHeight: 44 },
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

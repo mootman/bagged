@@ -7,7 +7,9 @@ import { Icon } from '@/components/icon';
 import { PeakImage, photosFor, pickIndex } from '@/components/peak-photo';
 import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success, tap } from '@/lib/haptics';
-import { ago, daysSince, formatPlanDate, ME, useStore } from '@/lib/store';
+import { Stars } from '@/components/log-bits';
+import { routeById } from '@/data/routes';
+import { ago, daysSince, formatDate, formatPlanDate, ME, useStore } from '@/lib/store';
 import type { Ascent, Beta, Plan, User } from '@/lib/types';
 
 const c = Colors.dark;
@@ -128,7 +130,7 @@ function milestone(a: Ascent, all: Ascent[]) {
 
 export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: string[] }) {
   const { width } = useWindowDimensions();
-  const { user, peakById, ascents, toggleKudos, wantsOf, toggleWant } = useStore();
+  const { user, peakById, ascents, toggleKudos, wantsOf, toggleWant, displayName } = useStore();
   const peak = peakById.get(ascent.peakId);
   const lastTap = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,8 +140,9 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
 
   const cardW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
   const photoH = Math.round(cardW * 0.78);
-  const lead = user(ascent.userId);
   const others = climbers.filter((u) => u !== ascent.userId).map((u) => (u === ME ? 'you' : (user(u)?.name.split(' ')[0] ?? 'someone')));
+  const route = routeById(ascent.routeId);
+  const photoCount = ascent.photos?.length ?? 0;
   const wanted = wantsOf(ME).includes(peak.id);
   const fresh = daysSince(ascent.date) <= 7;
   const pick = pickIndex(ascent.id, photosFor(peak.id).length);
@@ -165,19 +168,29 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
         <FacePile ids={climbers} size={40} max={3} />
         <View style={{ flex: 1 }}>
           <Text style={styles.who} numberOfLines={1}>
-            {ascent.userId === ME ? 'You' : lead?.name}
+            {displayName(ascent.userId)}
             {others.length ? <Text style={styles.whoWith}> with {others.join(' and ')}</Text> : null}
           </Text>
-          <Text style={styles.meta}>
-            {ago(ascent.createdAt)} ago{lead?.home && ascent.userId !== ME ? `, from ${lead.home}` : ''}
-          </Text>
+          <Text style={styles.meta}>{ascent.date ? formatDate(ascent.date) : `${ago(ascent.createdAt)} ago`}</Text>
         </View>
       </Pressable>
 
       <View style={styles.cardBody}>
         <Pressable onPress={() => router.push(`/peak/${peak.id}`)} style={{ gap: 2 }}>
-          <Text style={styles.milestone}>{milestone(ascent, ascents)}</Text>
+          <View style={styles.tags}>
+            <Text style={styles.milestone}>{milestone(ascent, ascents)}</Text>
+            {ascent.winter && (
+              <View style={styles.winterTag}>
+                <Icon name="snow" size={13} color="#3E6A8A" weight={2.2} />
+                <Text style={styles.winterTagText}>Winter</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.peakName}>{peak.name}</Text>
+          <View style={styles.subline}>
+            {ascent.rating ? <Stars value={ascent.rating} size={15} /> : null}
+            {route ? <Text style={styles.routeText}>{route.name}, {route.miles} mi, {route.gainFt.toLocaleString()} ft</Text> : null}
+          </View>
         </Pressable>
         {ascent.note ? (
           <Text style={styles.note} numberOfLines={4}>
@@ -187,7 +200,12 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
       </View>
 
       <Pressable onPress={onMediaPress} style={{ paddingHorizontal: Spacing.three }}>
-        <PeakImage peakId={peak.id} photoId={ascent.photoId} index={pick} width={cardW} height={photoH} radius={Radius.md} credit />
+        <PeakImage peakId={peak.id} photoId={ascent.photoId} uri={ascent.photos?.[0]} index={pick} width={cardW} height={photoH} radius={Radius.md} credit />
+        {photoCount > 1 && (
+          <View style={styles.photoCount}>
+            <Text style={styles.photoCountText}>1 of {photoCount}</Text>
+          </View>
+        )}
         <Animated.View pointerEvents="none" style={[styles.burst, { top: photoH / 2 - 48 }, burstStyle]}>
           <Icon name="summit" size={96} filled color="#fff" />
         </Animated.View>
@@ -197,7 +215,6 @@ export function AscentCard({ ascent, climbers }: { ascent: Ascent; climbers: str
         <View style={[styles.cardBody, { paddingTop: 12, gap: 8 }]}>
           <Text style={[styles.betaLabel, fresh && { color: c.success }]}>
             {fresh ? `Conditions ${daysSince(ascent.date) === 0 ? 'today' : daysSince(ascent.date) === 1 ? 'yesterday' : `${daysSince(ascent.date)} days ago`}` : 'Conditions'}
-            {ascent.beta.route ? <Text style={styles.betaRoute}>, {ascent.beta.route}</Text> : null}
           </Text>
           <BetaChips beta={ascent.beta} />
         </View>
@@ -307,6 +324,13 @@ const styles = StyleSheet.create({
   meta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13, marginTop: 1 },
   burst: { position: 'absolute', alignSelf: 'center' },
   cardBody: { paddingHorizontal: Spacing.three, paddingBottom: 12, gap: 8 },
+  tags: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  winterTag: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: '#E1EAF1' },
+  winterTagText: { color: '#3E6A8A', fontFamily: Type.bodyBold, fontSize: 12 },
+  subline: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 2 },
+  routeText: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14 },
+  photoCount: { position: 'absolute', top: 10, right: Spacing.three + 10, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 },
+  photoCountText: { color: '#fff', fontFamily: Type.bodyBold, fontSize: 12 },
   milestone: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 14 },
   peakName: { color: c.text, fontFamily: Type.display, fontSize: 26, lineHeight: 30 },
   betaLabel: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 14 },

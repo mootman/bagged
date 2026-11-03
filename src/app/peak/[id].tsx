@@ -4,10 +4,13 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Backdrop } from '@/components/backdrop';
+import { Stars } from '@/components/log-bits';
+import { PEAK_STATS } from '@/data/peak-stats.generated';
+import { routeById, routesFor, standardRoute } from '@/data/routes';
 import { Terrain3D } from '@/components/terrain-3d';
 import { TimeSlider } from '@/components/time-slider';
 import { Icon } from '@/components/icon';
-import { Avatar, BetaChips, FacePile, PlanCard } from '@/components/social';
+import { Avatar, BetaChips, FacePile } from '@/components/social';
 import { Body, Button, Display, SectionHeader } from '@/components/ui';
 import { Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { tap } from '@/lib/haptics';
@@ -16,17 +19,6 @@ import { heightmap } from '@/lib/terrain';
 
 const c = Colors.dark;
 
-/**
- * Peaks whose standard routes are commonly rated Class 3 or harder.
- * Verify against 14ers.com route ratings before launch.
- */
-const HARD = new Set([
-  'co-capitol-peak', 'co-little-bear-peak', 'co-maroon-peak', 'co-north-maroon-peak', 'co-pyramid-peak',
-  'co-crestone-needle', 'co-crestone-peak', 'co-kit-carson-mountain', 'co-mount-wilson', 'co-el-diente-peak',
-  'co-sunlight-peak', 'co-mount-eolus', 'co-north-eolus', 'co-wilson-peak', 'co-longs-peak', 'co-wetterhorn-peak',
-  'co-snowmass-mountain',
-]);
-
 function names(us: { name: string }[]) {
   const first = us.slice(0, 2).map((u) => u.name.split(' ')[0]);
   return us.length > 2 ? `${first.join(', ')} and ${us.length - 2} more` : first.join(' and ');
@@ -34,10 +26,10 @@ function names(us: { name: string }[]) {
 
 export default function PeakScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { peaks, peakById, logs, profile, toggleFavorite, toggleWant, wantsOf, betaFor, friendsWhoClimbed, friendsWhoWant, plansFor, user } = useStore();
+  const { peaks, peakById, logs, profile, toggleFavorite, toggleWant, wantsOf, betaFor, friendsWhoClimbed, friendsWhoWant, user, peakActivity, displayName } = useStore();
   const { width } = useWindowDimensions();
   const contentW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
-  const [time, setTime] = useState(0.7);
+  const [time, setTime] = useState(0.42);
   const [scrollOn, setScrollOn] = useState(true);
   const peak = peakById.get(id);
   if (!peak) return null;
@@ -46,13 +38,14 @@ export default function PeakScreen() {
   const isFav = profile.favorites.includes(peak.id);
   const favFull = profile.favorites.length >= 4 && !isFav;
   const rank = [...peaks].sort((a, b) => b.elevationFt - a.elevationFt).findIndex((p) => p.id === peak.id) + 1;
-  const hard = HARD.has(peak.id);
   const hm = heightmap(peak.id);
   const reports = betaFor(peak.id);
   const latest = reports[0];
   const climbed = friendsWhoClimbed(peak.id);
   const wanters = friendsWhoWant(peak.id);
-  const plans = plansFor(peak.id);
+  const act = peakActivity(peak.id);
+  const stats = PEAK_STATS[peak.id];
+  const std = standardRoute(peak.id);
   const wanted = wantsOf(ME).includes(peak.id);
   const reliefFt = hm ? Math.round(((hm.max - hm.min) * 3.28084) / 10) * 10 : null;
 
@@ -71,10 +64,84 @@ export default function PeakScreen() {
               </Text>
             </View>
 
-            <View style={styles.facts}>
-              <Fact value={peak.elevationFt.toLocaleString()} unit="ft" label="Summit" />
-              <Fact value={`#${rank}`} label="In Colorado" />
-              {reliefFt && <Fact value={reliefFt.toLocaleString()} unit="ft" label="Relief in view" />}
+            {/* Community numbers: everyone's ascents, ratings and winter climbs. */}
+            <View style={styles.community}>
+              {act.rating ? (
+                <View style={{ gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.ratingBig}>{act.rating.toFixed(1)}</Text>
+                    <Stars value={Math.round(act.rating * 2) / 2} size={18} />
+                  </View>
+                  <Text style={styles.communityMeta}>
+                    {act.ratings} {act.ratings === 1 ? 'rating' : 'ratings'}, {act.ascents} {act.ascents === 1 ? 'ascent' : 'ascents'} logged
+                    {act.winter ? `, ${act.winter} in winter` : ''}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.communityMeta}>{act.ascents ? `${act.ascents} ascents logged` : 'Nobody has logged this one yet. Be the first.'}</Text>
+              )}
+            </View>
+
+            <Button title={mine.length ? 'Log another climb' : 'I climbed this'} onPress={() => router.push({ pathname: '/log/new', params: { peakId: peak.id } })} />
+            <View style={styles.actions}>
+              <Pressable
+                onPress={() => {
+                  tap();
+                  toggleWant(peak.id);
+                }}
+                style={[styles.pill, wanted && styles.pillOn]}>
+                <Icon name="bookmark" size={18} filled={wanted} color={wanted ? c.accentText : c.text} />
+                <Text style={[styles.pillText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to climb'}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  tap();
+                  toggleFavorite(peak.id);
+                }}
+                disabled={favFull}
+                accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to four favorites'}
+                style={[styles.pill, isFav && styles.pillFav, { opacity: favFull ? 0.35 : 1 }]}>
+                <Icon name="heart" size={18} filled={isFav} color={isFav ? '#fff' : c.text} />
+                <Text style={[styles.pillText, isFav && { color: '#fff' }]}>{isFav ? 'In your top four' : 'Top four'}</Text>
+              </Pressable>
+            </View>
+
+            <SectionHeader title="The numbers" />
+            <View style={styles.grid}>
+              <Fact value={peak.elevationFt.toLocaleString()} unit="ft" label="Elevation" />
+              <Fact value={`#${rank}`} label="Highest in Colorado" />
+              {stats?.prominenceFt ? <Fact value={stats.prominenceFt.toLocaleString()} unit="ft" label="Prominence" /> : <Fact value="Unranked" label="Under 300 ft prominence" />}
+              {stats?.isolationMi ? <Fact value={String(stats.isolationMi)} unit="mi" label="To a higher peak" /> : null}
+              {std ? <Fact value={String(std.miles)} unit="mi" label="Standard route, round trip" /> : null}
+              {std ? <Fact value={std.gainFt.toLocaleString()} unit="ft" label="Standard route gain" /> : null}
+              {std ? <Fact value={`Class ${std.cls}`} label={std.cls >= 3 ? 'Hands on rock' : 'Hiking'} /> : null}
+              {reliefFt ? <Fact value={reliefFt.toLocaleString()} unit="ft" label="Relief within 2.5 km" /> : null}
+            </View>
+            {stats?.firstAscent || stats?.location ? (
+              <View style={{ gap: 6 }}>
+                {stats.location ? <Text style={styles.lore}>{stats.location}.</Text> : null}
+                {stats.firstAscent ? <Text style={styles.lore}>First recorded ascent: {stats.firstAscent}.</Text> : null}
+              </View>
+            ) : null}
+
+            <SectionHeader title="Routes" />
+            <View style={{ gap: 8 }}>
+              {routesFor(peak.id).map((r) => (
+                <View key={r.id} style={styles.routeRow}>
+                  <View style={[styles.classDot, { backgroundColor: r.cls >= 4 ? c.danger : r.cls === 3 ? c.gold : c.success }]}>
+                    <Text style={styles.classText}>{r.cls}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={styles.routeName}>{r.name}</Text>
+                    <Text style={styles.routeMeta}>
+                      {r.miles} mi round trip, {r.gainFt.toLocaleString()} ft gain
+                      {r.peaks ? `. ${r.peaks.map((id) => peakById.get(id)?.name).join(', ')}` : ''}
+                    </Text>
+                    {r.note ? <Text style={styles.routeMeta}>{r.note}</Text> : null}
+                  </View>
+                </View>
+              ))}
+              <Text style={styles.credit}>Distances and gain are approximate. Read a full route description before you go.</Text>
             </View>
 
             {/* What it's like up there right now. The reason to open this page mid-week. */}
@@ -97,7 +164,7 @@ export default function PeakScreen() {
                   ) : null}
                   <View style={styles.betaBy}>
                     <Avatar user={user(latest.userId)} size={22} />
-                    <Text style={styles.betaByText}>{latest.userId === ME ? 'You' : user(latest.userId)?.name}{latest.beta?.route ? `, ${latest.beta.route}` : ''}{reports.length > 1 ? `. ${reports.length - 1} more reports below.` : ''}</Text>
+                    <Text style={styles.betaByText}>{displayName(latest.userId)}{routeById(latest.routeId) ? `, ${routeById(latest.routeId)!.name}` : ''}{reports.length > 1 ? `. ${reports.length - 1} more reports below.` : ''}</Text>
                   </View>
                 </Pressable>
               ) : (
@@ -126,41 +193,6 @@ export default function PeakScreen() {
               </View>
             )}
 
-            <Button title={wanters.length ? `Plan it with ${wanters[0].name.split(' ')[0]}${wanters.length > 1 ? ` +${wanters.length - 1}` : ''}` : 'Plan a climb'} onPress={() => router.push({ pathname: '/plan/new', params: { peakId: peak.id, ...(wanters[0] ? { invite: wanters[0].id } : {}) } })} />
-            <View style={styles.actions}>
-              <Pressable
-                onPress={() => {
-                  tap();
-                  toggleWant(peak.id);
-                }}
-                style={[styles.pill, wanted && styles.pillOn]}>
-                <Icon name="bookmark" size={18} filled={wanted} color={wanted ? c.accentText : c.text} />
-                <Text style={[styles.pillText, wanted && { color: c.accentText }]}>{wanted ? 'On your list' : 'Want to climb'}</Text>
-              </Pressable>
-              <Pressable onPress={() => router.push({ pathname: '/log/new', params: { peakId: peak.id } })} style={styles.pill}>
-                <Text style={styles.pillText}>{mine.length ? 'Log it again' : 'I climbed this'}</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  tap();
-                  toggleFavorite(peak.id);
-                }}
-                disabled={favFull}
-                accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to four favorites'}
-                style={[styles.fav, { opacity: favFull ? 0.35 : 1 }]}>
-                <Icon name="heart" size={20} filled={isFav} color={isFav ? c.accent : c.text} />
-              </Pressable>
-            </View>
-
-            {plans.length > 0 && (
-              <>
-                <SectionHeader title={`Going up (${plans.length})`} />
-                {plans.map((p) => (
-                  <PlanCard key={p.id} plan={p} />
-                ))}
-              </>
-            )}
-
             {reports.length > 1 && (
               <>
                 <SectionHeader title="More conditions reports" />
@@ -168,7 +200,7 @@ export default function PeakScreen() {
                   <Pressable key={r.id} onPress={() => router.push(`/ascent/${r.id}`)} style={styles.report}>
                     <View style={styles.betaBy}>
                       <Avatar user={user(r.userId)} size={22} />
-                      <Text style={[styles.betaByText, { flex: 1 }]}>{r.userId === ME ? 'You' : user(r.userId)?.name}</Text>
+                      <Text style={[styles.betaByText, { flex: 1 }]}>{displayName(r.userId)}</Text>
                       <Text style={styles.betaAgo}>{daysSince(r.date)} days ago</Text>
                     </View>
                     <BetaChips beta={r.beta} compact />
@@ -189,17 +221,8 @@ export default function PeakScreen() {
               <TimeSlider value={time} onChange={setTime} />
             </View>
 
-            <View style={[styles.route, hard && { borderLeftColor: c.danger }]}>
-              <Text style={[styles.routeTag, { color: hard ? c.danger : c.success }]}>{hard ? 'Scramble' : 'Hike'}</Text>
-              <Body muted style={{ flex: 1 }}>
-                {hard
-                  ? 'The standard route has scrambling and real exposure. Check conditions, start early, turn around if weather builds.'
-                  : 'The standard route is a hike, but it is still 14,000 ft. Start early and be off the top before afternoon storms.'}
-              </Body>
-            </View>
-
             <Pressable onPress={() => Linking.openURL(`https://www.14ers.com/search?q=${encodeURIComponent(peak.name)}`)}>
-              <Text style={styles.extLink}>Route descriptions on 14ers.com</Text>
+              <Text style={styles.extLink}>Full route descriptions on 14ers.com</Text>
             </Pressable>
 
             {mine.length > 0 && (
@@ -215,7 +238,7 @@ export default function PeakScreen() {
                 ))}
               </>
             )}
-            <Text style={styles.credit}>Photos from Wikimedia Commons, credited on each photo. Terrain from USGS 3DEP and SRTM via AWS Terrain Tiles, 5 km around the summit, height exaggerated 1.35 times.</Text>
+            <Text style={styles.credit}>Photos from Wikimedia Commons, credited on each photo. Terrain from USGS 3DEP and SRTM via AWS Terrain Tiles, 5 km around the summit, height exaggerated 1.2 times.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -225,7 +248,7 @@ export default function PeakScreen() {
 
 function Fact({ value, unit, label }: { value: string; unit?: string; label: string }) {
   return (
-    <View style={{ flex: 1, gap: 2 }}>
+    <View style={styles.fact}>
       <Text style={{ color: c.text, fontSize: 26, fontFamily: Type.display, fontVariant: ['tabular-nums'] }}>
         {value}
         {unit ? <Text style={{ fontSize: 16, fontFamily: Type.bodyMedium, color: c.textSecondary }}> {unit}</Text> : null}
@@ -240,8 +263,20 @@ const styles = StyleSheet.create({
   sub: { color: c.textSecondary, fontFamily: Type.bodyMedium, fontSize: 16 },
   terrain: { borderRadius: Radius.lg, overflow: 'hidden' },
   hint: { position: 'absolute', bottom: 12, left: 0, right: 0, alignItems: 'center' },
-  hintText: { color: 'rgba(255,255,255,0.85)', fontFamily: Type.bodyBold, fontSize: 13 },
+  hintText: { color: c.textSecondary, fontFamily: Type.bodyBold, fontSize: 13 },
   facts: { flexDirection: 'row', gap: Spacing.three },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 18 },
+  fact: { width: '50%', gap: 2, paddingRight: 8 },
+  community: { gap: 6 },
+  ratingBig: { color: c.text, fontFamily: Type.display, fontSize: 28 },
+  communityMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 15 },
+  pillFav: { backgroundColor: c.danger },
+  lore: { color: c.text, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
+  routeRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', padding: 14, borderRadius: Radius.md, backgroundColor: c.backgroundElement },
+  classDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  classText: { color: '#fff', fontFamily: Type.bodyBold, fontSize: 14 },
+  routeName: { color: c.text, fontFamily: Type.bodyBold, fontSize: 16 },
+  routeMeta: { color: c.textSecondary, fontFamily: Type.body, fontSize: 14, lineHeight: 19 },
   actions: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
   fav: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: c.backgroundElement },
   route: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.md, backgroundColor: c.backgroundElement, borderLeftWidth: 5, borderLeftColor: c.success, alignItems: 'flex-start' },

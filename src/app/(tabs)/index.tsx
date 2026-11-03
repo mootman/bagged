@@ -1,133 +1,104 @@
 import { router } from 'expo-router';
-import { Fragment } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Fragment, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
 import { Mark } from '@/components/mark';
-import { PeakImage } from '@/components/peak-photo';
-import { AscentCard, Avatar, PlanCard } from '@/components/social';
+import { AscentCard, Avatar } from '@/components/social';
+import { Chip } from '@/components/ui';
 import { Welcome } from '@/components/welcome';
 import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
-import { daysSince, ME, useStore } from '@/lib/store';
+import { daysSince, useStore } from '@/lib/store';
+import type { User } from '@/lib/types';
 
 const c = Colors.dark;
 
-function whenWas(date: string) {
-  const d = daysSince(date);
-  return d === 1 ? 'yesterday' : d === 0 ? 'today' : `${d} days ago`;
-}
-
 export default function FeedScreen() {
-  const { width } = useWindowDimensions();
   const store = useStore();
-  const { me, feed, upcomingPlans, toLog, peakById, user, suggestions, follow, ascents, following } = store;
+  const { me, feed, suggestions, follow, ascents, following, logs } = store;
+  const [scope, setScope] = useState<'everyone' | 'friends'>('everyone');
   if (!me.name) return <Welcome />;
 
-  const items = feed().filter((i) => i.kind === 'ascent');
-  const { mine, crew, open } = upcomingPlans();
-  const soon = [...mine, ...crew, ...open].filter((p) => daysSince(p.date) >= -14).slice(0, 6);
-  const pending = toLog();
-  const fresh = ascents.filter((a) => a.beta?.surface && daysSince(a.date) <= 7 && (a.userId === ME || following.includes(a.userId))).length;
-  const people = suggestions();
-  const cardW = Math.min(width, MaxContentWidth) - Spacing.three * 2;
+  const items = feed(scope).filter((i) => i.kind === 'ascent');
+  const fresh = ascents.filter((a) => a.beta?.surface && daysSince(a.date) <= 7).length;
+  const people = suggestions().slice(0, 8);
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}>
         <View style={styles.header}>
           <Mark />
-          <Pressable onPress={() => router.push('/peaks')} style={styles.signBtn} accessibilityLabel="Log a summit" hitSlop={6}>
+          <Pressable onPress={() => router.push('/peaks')} style={styles.signBtn} accessibilityLabel="Log a climb" hitSlop={6}>
             <Icon name="plus" size={20} color={c.accentText} weight={2.2} />
-            <Text style={styles.signText}>Log a summit</Text>
+            <Text style={styles.signText}>Log a climb</Text>
           </Pressable>
         </View>
 
-        {/* You climbed with friends and nobody has logged it. One tap logs it for all of you. */}
-        {pending.map((p) => {
-          const peak = peakById.get(p.peakId);
-          const others = p.memberIds.filter((m) => m !== ME).map((m) => user(m)?.name.split(' ')[0]);
-          return (
-            <Pressable key={p.id} onPress={() => router.push(`/plan/${p.id}`)} style={styles.prompt}>
-              <PeakImage peakId={p.peakId} width={cardW} height={300} />
-              <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']} style={StyleSheet.absoluteFill} />
-              <View style={styles.promptText}>
-                <Text style={styles.promptKicker}>{whenWas(p.date)[0].toUpperCase() + whenWas(p.date).slice(1)} with {others.join(' and ')}</Text>
-                <Text style={styles.promptTitle}>How was {peak?.name}?</Text>
-                <Text style={styles.promptBody}>Log it once for everyone, and tell the next crew what the snow was like.</Text>
-                <View style={styles.promptBtn}>
-                  <Text style={styles.promptBtnText}>We made it up</Text>
-                  <Icon name="arrow" size={18} color={c.text} weight={2.2} />
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
+        {!me.onboarded && logs.length === 0 && (
+          <Pressable onPress={() => router.push('/backfill')} style={styles.backfill}>
+            <Text style={styles.backfillTitle}>Add the peaks you&apos;ve already climbed</Text>
+            <Text style={styles.backfillBody}>Tick them off in a minute. Your map, stats and feet climbed fill in right away.</Text>
+          </Pressable>
+        )}
 
-        <View style={styles.page}>
-          <View style={styles.sectionRow}>
-            <Text style={styles.section}>Going soon</Text>
-            <Pressable onPress={() => router.push('/plans')} hitSlop={10}>
-              <Text style={styles.link}>All plans</Text>
-            </Pressable>
+        <View style={[styles.page, { gap: 10, marginTop: Spacing.two, marginBottom: Spacing.three }]}>
+          <View style={styles.scopeRow}>
+            <Chip label="Everyone" active={scope === 'everyone'} onPress={() => setScope('everyone')} />
+            <Chip label={following.length ? `Friends (${following.length})` : 'Friends'} active={scope === 'friends'} onPress={() => setScope('friends')} />
           </View>
+          {scope === 'everyone' && fresh > 0 && <Text style={styles.freshLine}>{fresh} conditions reports this week</Text>}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two }}>
-          {soon.map((p) => (
-            <View key={p.id} style={{ width: 300 }}>
-              <PlanCard plan={p} compact width={300} />
-            </View>
-          ))}
-          <Pressable onPress={() => router.push('/plan/new')} style={styles.newPlan}>
-            <Icon name="plus" size={26} color={c.text} />
-            <Text style={styles.newPlanText}>Start a plan</Text>
-          </Pressable>
-        </ScrollView>
 
-        <View style={[styles.page, { marginTop: Spacing.five, marginBottom: Spacing.two }]}>
-          <Text style={styles.section}>Your crew</Text>
-          {fresh > 0 && <Text style={styles.freshLine}>{fresh} people reported conditions this week</Text>}
-        </View>
+        {scope === 'friends' && following.length === 0 && (
+          <View style={[styles.page, { gap: 8, marginBottom: Spacing.three }]}>
+            <Text style={styles.section}>No friends yet</Text>
+            <Text style={styles.emptyBody}>Follow people below or from the Everyone feed. Their climbs show up here, and you can tag each other on climbs you do together.</Text>
+          </View>
+        )}
 
         <View style={styles.feed}>
           {items.map((item, i) =>
             item.kind === 'ascent' ? (
               <Fragment key={item.ascent.id}>
                 <AscentCard ascent={item.ascent} climbers={item.climbers} />
-                {i === 2 && people.length > 0 && (
-                  <View style={styles.suggest}>
-                    <Text style={[styles.section, { paddingHorizontal: Spacing.three, fontSize: 20 }]}>People who climb near you</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two }}>
-                      {people.map((u) => (
-                        <Pressable key={u.id} onPress={() => router.push(`/user/${u.id}`)} style={styles.person}>
-                          <Avatar user={u} size={52} />
-                          <Text style={styles.personName} numberOfLines={1}>
-                            {u.name}
-                          </Text>
-                          <Text style={styles.personMeta}>
-                            {store.summitedBy(u.id).size} fourteeners, {u.home}
-                          </Text>
-                          <Pressable
-                            onPress={() => {
-                              success();
-                              follow(u.id);
-                            }}
-                            style={styles.followSmall}>
-                            <Text style={styles.followSmallText}>Follow</Text>
-                          </Pressable>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+                {i === 1 && people.length > 0 && <People people={people} follow={follow} />}
               </Fragment>
             ) : null,
           )}
+          {items.length === 0 && people.length > 0 && <People people={people} follow={follow} />}
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function People({ people, follow }: { people: User[]; follow: (id: string) => void }) {
+  const { displayName, summitedBy } = useStore();
+  return (
+    <View style={styles.suggest}>
+      <Text style={[styles.section, { paddingHorizontal: Spacing.three, fontSize: 22 }]}>Climbers to follow</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.three, gap: Spacing.two }}>
+        {people.map((u) => (
+          <Pressable key={u.id} onPress={() => router.push(`/user/${u.id}`)} style={styles.person}>
+            <Avatar user={u} size={52} />
+            <Text style={styles.personName} numberOfLines={1}>
+              {displayName(u.id)}
+            </Text>
+            <Text style={styles.personMeta}>{summitedBy(u.id).size} fourteeners</Text>
+            <Pressable
+              onPress={() => {
+                success();
+                follow(u.id);
+              }}
+              style={styles.followSmall}>
+              <Text style={styles.followSmallText}>Follow</Text>
+            </Pressable>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -139,6 +110,11 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: Spacing.four, marginBottom: Spacing.two },
   section: { color: c.text, fontFamily: Type.display, fontSize: 26 },
   link: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 15 },
+  scopeRow: { flexDirection: 'row', gap: 8 },
+  emptyBody: { color: c.textSecondary, fontFamily: Type.body, fontSize: 16, lineHeight: 23 },
+  backfill: { marginHorizontal: Spacing.three, marginTop: Spacing.two, padding: Spacing.four, borderRadius: Radius.lg, backgroundColor: c.accent, gap: 6 },
+  backfillTitle: { color: '#fff', fontFamily: Type.display, fontSize: 24, lineHeight: 29 },
+  backfillBody: { color: 'rgba(255,255,255,0.88)', fontFamily: Type.body, fontSize: 16, lineHeight: 22 },
   freshLine: { color: c.success, fontFamily: Type.bodyBold, fontSize: 14, marginTop: 4 },
   prompt: { marginHorizontal: Spacing.three, marginTop: Spacing.two, borderRadius: Radius.lg, overflow: 'hidden', alignSelf: 'center' },
   promptText: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: Spacing.four, gap: 6 },

@@ -30,6 +30,15 @@ Social layer: follow, feed (one card per group climb, milestones like "19th 14er
 
 Intentionally left out for now: crews and planning, the want-to-climb list, live GPS tracking, offline maps, Apple Health import, accounts and sync, and a paid tier.
 
+## What's in it now
+
+- **Sign up**: name, email (only used to tell you when a friend tags you) and where you live. Then a checklist of all 58 peaks to bulk-add every ascent you've done, as many times each as you want, with optional dates and a winter flag.
+- **Log a climb**: date, winter flag (suggested from the date, calendar winter Dec 21 to Mar 20), the route you took, half-star rating, description, photos, who was with you, conditions.
+- **Stats**: feet climbed, miles, ascents, different 14ers, winter ascents, Everests, highest, most climbed, best year, favorite month, hardest class, ranges finished. Feet and miles come from the route picked (a combo like the Decalibron counts once per day), or the standard route.
+- **Peaks**: community rating and ascent counts, prominence, isolation, rank, first recorded ascent, routes with distance, gain and class, the 3D relief with the light slider.
+- **Feed**: Everyone (all public ascents, first name and last initial) and Friends. Reactions and comments. Plans are hidden for now (`src/app/plans.tsx` still exists).
+- **Data**: route figures in `src/data/routes.ts` are approximate and need checking before launch, ideally re-measured from OpenStreetMap trails and the elevation model. Peak facts come from Wikipedia (`src/data/peak-stats.generated.ts`). 14ers.com content is copyrighted and not used; the app links out to it.
+
 ## Visual system
 
 Photo-first, like the outdoor apps people already trust (AllTrails, Strava, Komoot). The mountains are the colour.

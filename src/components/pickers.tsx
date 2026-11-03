@@ -52,9 +52,6 @@ export function BetaPicker({ beta, onChange }: { beta: Beta; onChange: (b: Beta)
             style={styles.input}
           />
         </Field>
-        <Field label="Route" style={{ flex: 1 }}>
-          <TextInput value={beta.route ?? ''} onChangeText={(t) => onChange({ ...beta, route: t })} placeholder="Standard" placeholderTextColor={c.textMuted} style={styles.input} />
-        </Field>
       </View>
     </View>
   );

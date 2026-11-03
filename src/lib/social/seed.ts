@@ -1,3 +1,5 @@
+import { routesFor } from '@/data/routes';
+
 import type { Ascent, Beta, Plan, User } from '../types';
 
 /**
@@ -152,7 +154,7 @@ export function buildDemo(now = Date.now()) {
     },
     {
       // A climb "you" did yesterday with friends but nobody has logged yet: the plan-to-log loop.
-      id: 'p_dem', peakId: 'co-mount-democrat', date: day(-1, now), start: '06:00', hostId: 'u_priya', memberIds: ['u_priya', 'me', 'u_marcus'], requestIds: [],
+      id: 'p_dem', peakId: 'co-mount-democrat', date: day(-1, now), start: '06:00', hostId: 'u_priya', memberIds: ['u_priya', 'u_marcus'], requestIds: [],
       size: 4, visibility: 'crew', note: 'Democrat, then Decalibron if we feel good.', createdAt: now - 6 * 86_400_000,
     },
     {
@@ -161,5 +163,14 @@ export function buildDemo(now = Date.now()) {
     },
   ];
 
-  return { users: DEMO_USERS, following: DEMO_FOLLOWING, wants: DEMO_WANTS, ascents, plans };
+  // Ratings, routes and winter flags so the community numbers on each peak aren't empty.
+  const filled = ascents.map((a, i) => {
+    const routes = routesFor(a.peakId);
+    const route = routes.find((r) => r.name === a.beta?.route) ?? routes[0];
+    const [, m, d] = (a.date ?? '0-0-0').split('-').map(Number);
+    const winter = (m === 12 && d >= 21) || m === 1 || m === 2 || (m === 3 && d <= 20);
+    return { ...a, routeId: route?.id, winter, rating: a.note || i % 3 === 0 ? [4, 4.5, 5, 3.5, 4.5][i % 5] : undefined };
+  });
+
+  return { users: DEMO_USERS, following: DEMO_FOLLOWING, wants: DEMO_WANTS, ascents: filled, plans };
 }

@@ -40,7 +40,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShadowVisible: false, headerBackTitle: 'Back', headerTintColor: c.text, headerStyle: { backgroundColor: c.background }, headerTitleStyle: { fontFamily: 'NunitoSans_700Bold' }, contentStyle: { backgroundColor: c.background } }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="peak/[id]" options={{ title: '' }} />
-            <Stack.Screen name="log/new" options={{ title: 'Sign the register', presentation: 'modal' }} />
+            <Stack.Screen name="log/new" options={{ title: 'Log a climb', presentation: 'modal' }} />
             <Stack.Screen name="ascent/[id]" options={{ title: '' }} />
             <Stack.Screen name="user/[id]" options={{ title: '' }} />
             <Stack.Screen name="plan/new" options={{ title: 'Plan a climb', presentation: 'modal' }} />
@@ -48,6 +48,9 @@ export default function RootLayout() {
             <Stack.Screen name="scan" options={{ title: 'Find old summits' }} />
             <Stack.Screen name="share/[id]" options={{ title: 'Summit card', presentation: 'modal' }} />
             <Stack.Screen name="claim/[token]" options={{ title: 'Claim your summit' }} />
+            <Stack.Screen name="plans" options={{ title: 'Plans' }} />
+            <Stack.Screen name="backfill" options={{ title: 'Peaks you\'ve climbed' }} />
+            <Stack.Screen name="stats" options={{ title: 'Your stats' }} />
             <Stack.Screen name="credits" options={{ title: 'Photo credits' }} />
             <Stack.Screen name="signed/[id]" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />
           </Stack>

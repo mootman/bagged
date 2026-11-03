@@ -12,23 +12,26 @@ import { heightmap, TERRAIN_SPAN_M } from '@/lib/terrain';
 
 const c = Colors.dark;
 const SIZE = 10; // scene units across the 5 km window
-const EXAGGERATION = 1.35;
+const EXAGGERATION = 1.2;
 
-/** Colors by real elevation and slope: forest, tundra, rock, snow. */
-function terrainColor(elev: number, slope: number, rimFade: number, out: THREE.Color) {
-  const forest = new THREE.Color('#24392C');
-  const tundra = new THREE.Color('#6B6A4C');
-  const rock = new THREE.Color('#8C837A');
-  const snow = new THREE.Color('#F3F1EC');
-  if (elev < 3400) out.copy(forest);
-  else if (elev < 3750) out.copy(forest).lerp(tundra, (elev - 3400) / 350);
-  else if (elev < 3950) out.copy(tundra).lerp(rock, (elev - 3750) / 200);
-  else out.copy(rock);
-  // Snow holds on high, gentler ground.
-  if (elev > 3900 && slope < 0.85) out.lerp(snow, Math.min(1, ((elev - 3900) / 300) * (1 - slope)));
-  out.lerp(new THREE.Color('#2A2620'), rimFade * 0.6);
+const FOREST = new THREE.Color('#355238');
+const TUNDRA = new THREE.Color('#8A8660');
+const ROCK = new THREE.Color('#9A9087');
+const SNOW = new THREE.Color('#F6F5F1');
+const BASE = -0.35;
+
+/** Colors by real elevation and slope: forest below treeline, tundra, rock, snow on gentler high ground. */
+function terrainColor(elev: number, slope: number, out: THREE.Color) {
+  if (elev < 3450) out.copy(FOREST);
+  else if (elev < 3700) out.copy(FOREST).lerp(TUNDRA, (elev - 3450) / 250);
+  else if (elev < 3950) out.copy(TUNDRA).lerp(ROCK, (elev - 3700) / 250);
+  else out.copy(ROCK);
+  // Steep ground reads as rock at any height.
+  if (slope > 0.75) out.lerp(ROCK, Math.min(1, (slope - 0.75) * 3));
+  if (elev > 3950 && slope < 0.8) out.lerp(SNOW, Math.min(0.85, ((elev - 3950) / 350) * (1 - slope)));
 }
 
+/** A square block of real terrain with earth-coloured sides, like a relief model on a desk. */
 function useTerrainGeometry(peakId: string) {
   return useMemo(() => {
     const hm = heightmap(peakId);
@@ -46,43 +49,41 @@ function useTerrainGeometry(peakId: string) {
       for (let i = 0; i < grid; i++) {
         const idx = j * grid + i;
         const elev = h[idx];
-        // Round "diorama": terrain sinks to the base outside a circle.
-        const nx = (i / (grid - 1)) * 2 - 1;
-        const nz = (j / (grid - 1)) * 2 - 1;
-        const r = Math.sqrt(nx * nx + nz * nz);
-        const fall = r < 0.82 ? 1 : Math.max(0, 1 - (r - 0.82) / 0.16);
-        const ease = fall * fall * (3 - 2 * fall);
-        pos.setY(idx, (elev - min) * scale * ease);
-
+        pos.setY(idx, (elev - min) * scale);
         const dx = (h[j * grid + Math.min(grid - 1, i + 1)] - h[j * grid + Math.max(0, i - 1)]) / (2 * cellM);
         const dz = (h[Math.min(grid - 1, j + 1) * grid + i] - h[Math.max(0, j - 1) * grid + i]) / (2 * cellM);
-        const slope = Math.min(1, Math.sqrt(dx * dx + dz * dz));
-        terrainColor(elev, slope, 1 - ease, col);
+        terrainColor(elev, Math.min(1, Math.sqrt(dx * dx + dz * dz)), col);
         colors.set([col.r, col.g, col.b], idx * 3);
       }
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    // Cut the square down to a disc so it sits like a museum relief model.
-    const index = geo.getIndex()!;
-    const keep: number[] = [];
-    const radial = (v: number) => {
-      const i = v % grid;
-      const j = Math.floor(v / grid);
-      const nx = (i / (grid - 1)) * 2 - 1;
-      const nz = (j / (grid - 1)) * 2 - 1;
-      return Math.sqrt(nx * nx + nz * nz);
-    };
-    for (let k = 0; k < index.count; k += 3) {
-      const a = index.getX(k);
-      const b = index.getX(k + 1);
-      const d = index.getX(k + 2);
-      if (radial(a) <= 1 && radial(b) <= 1 && radial(d) <= 1) keep.push(a, b, d);
-    }
-    geo.setIndex(keep);
     geo.computeVertexNormals();
+
+    // Sides: a wall from each edge of the surface down to the base.
+    const edge = (k: number, side: number) => {
+      // side 0: north row, 1: south row, 2: west column, 3: east column
+      if (side === 0) return k;
+      if (side === 1) return (grid - 1) * grid + k;
+      if (side === 2) return k * grid;
+      return k * grid + grid - 1;
+    };
+    const verts: number[] = [];
+    for (let side = 0; side < 4; side++) {
+      for (let k = 0; k < grid - 1; k++) {
+        const a = edge(k, side);
+        const b = edge(k + 1, side);
+        const ax = pos.getX(a), ay = pos.getY(a), az = pos.getZ(a);
+        const bx = pos.getX(b), by = pos.getY(b), bz = pos.getZ(b);
+        verts.push(ax, ay, az, bx, by, bz, ax, BASE, az, bx, by, bz, bx, BASE, bz, ax, BASE, az);
+      }
+    }
+    const sides = new THREE.BufferGeometry();
+    sides.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    sides.computeVertexNormals();
+
     const center = Math.floor(grid / 2);
     const summitY = (h[center * grid + center] - min) * scale;
-    return { geo, summitY };
+    return { geo, sides, summitY };
   }, [peakId]);
 }
 
@@ -102,16 +103,17 @@ function Scene({
   const s = skyAt(time);
 
   useEffect(() => {
-    scene.background = new THREE.Color(s.sky);
-    scene.fog = new THREE.Fog(s.horizon, 14, 30);
-  }, [scene, s.sky, s.horizon]);
+    // The page behind shows through: no painted sky, no fog.
+    scene.background = null;
+    scene.fog = null;
+  }, [scene]);
 
   useFrame((_, dt) => {
     const o = orbit.current;
     if (!o) return;
     // Slow auto-rotate when nobody is touching it.
     if (!o.dragging && Date.now() - o.lastTouch > 2500) o.yaw += dt * 0.12;
-    const radius = 18.5;
+    const radius = 21;
     const y = Math.sin(o.pitch) * radius;
     const flat = Math.cos(o.pitch) * radius;
     camera.position.set(Math.sin(o.yaw) * flat, y + (terrain?.summitY ?? 0) * 0.4, Math.cos(o.yaw) * flat);
@@ -125,20 +127,14 @@ function Scene({
 
   return (
     <>
-      <hemisphereLight ref={hemi} args={[s.horizon, '#1A1612', s.ambient]} />
+      <hemisphereLight ref={hemi} args={['#FFFFFF', '#6B6253', s.ambient + 0.35]} />
       <directionalLight ref={sun} position={sunPos} color={s.sun} intensity={s.sunIntensity} />
       <directionalLight position={[-sunPos[0], 6, -sunPos[2]]} color={s.sky} intensity={0.6} />
       <mesh geometry={terrain.geo}>
         <meshStandardMaterial vertexColors roughness={0.95} metalness={0} />
       </mesh>
-      {/* Plinth under the relief */}
-      <mesh position={[0, -0.18, 0]}>
-        <cylinderGeometry args={[SIZE / 2 + 0.05, SIZE / 2 + 0.12, 0.36, 96]} />
-        <meshStandardMaterial color="#C9CEC3" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[SIZE / 2 - 0.02, SIZE / 2 + 0.06, 128]} />
-        <meshBasicMaterial color={c.text} />
+      <mesh geometry={terrain.sides}>
+        <meshStandardMaterial color="#7A6A58" roughness={1} side={THREE.DoubleSide} />
       </mesh>
       {/* Summit pin */}
       <mesh position={[0, terrain.summitY + 0.55, 0]}>
@@ -155,7 +151,8 @@ function Scene({
 
 /** Real terrain around the summit in 3D. Drag to spin and tilt; it slowly turns on its own. */
 export function Terrain3D({ peakId, time, height = 380 }: { peakId: string; time: number; height?: number }) {
-  const orbit = useRef({ yaw: 0.6, pitch: 0.7, dragging: false, lastTouch: 0 });
+  const orbit = useRef({ yaw: 0.6, pitch: 0.62, dragging: false, lastTouch: 0 });
+  const sky = skyAt(time);
   const start = useRef({ yaw: 0, pitch: 0 });
 
   const pan = useMemo(
@@ -186,15 +183,21 @@ export function Terrain3D({ peakId, time, height = 380 }: { peakId: string; time
 
   return (
     <View style={[styles.wrap, { height }]} {...pan.panHandlers}>
-      <Canvas camera={{ fov: 38, near: 0.1, far: 100, position: [8, 6, 8] }} gl={{ antialias: true }}>
+      {/* A soft sky that follows the light slider, washed out so it sits on the page. */}
+      <LinearGradient pointerEvents="none" colors={[wash(sky.sky, 0.55), wash(sky.horizon, 0.7)]} style={StyleSheet.absoluteFill} />
+      <Canvas camera={{ fov: 36, near: 0.1, far: 100, position: [8, 6, 8] }} gl={{ antialias: true, alpha: true }}>
         <Scene peakId={peakId} time={time} orbit={orbit} />
       </Canvas>
-      <LinearGradient pointerEvents="none" colors={['transparent', c.background]} style={styles.fade} />
     </View>
   );
 }
 
+/** Mix a colour toward the page background so the sky never goes dark and heavy. */
+function wash(hex: string, t: number) {
+  const a = new THREE.Color(hex);
+  return `#${a.lerp(new THREE.Color(c.backgroundElement), t).getHexString()}`;
+}
+
 const styles = StyleSheet.create({
-  wrap: { width: '100%', backgroundColor: c.background },
-  fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 110 },
+  wrap: { width: '100%', backgroundColor: c.backgroundElement },
 });

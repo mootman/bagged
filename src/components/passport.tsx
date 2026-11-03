@@ -7,12 +7,15 @@ import { PeakPoster } from '@/components/peak-poster';
 import { PeakImage } from '@/components/peak-photo';
 import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/social';
+import { StatsCard } from '@/components/stats-card';
+import { Stars } from '@/components/log-bits';
 import { Tilt } from '@/components/tilt';
 import { SectionHeader } from '@/components/ui';
 import { BottomTabInset, Colors, MaxContentWidth, Radius, Spacing, Type } from '@/constants/theme';
 import { success } from '@/lib/haptics';
 import { ME, useStore } from '@/lib/store';
 import type { Ascent } from '@/lib/types';
+import { climberStats } from '@/lib/stats';
 import { useCountUp } from '@/lib/use-count-up';
 
 const c = Colors.dark;
@@ -33,7 +36,6 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
   const contentW = pageW - Spacing.three * 2;
   const favW = (contentW - Spacing.two * 3) / 4;
   const listCount = peaks.filter((p) => done.has(p.id)).length;
-  const partners = new Set(list.flatMap((a) => a.withIds)).size;
   const shownCount = useCountUp(listCount, { duration: 1100, delay: 250 });
 
   if (!u) return null;
@@ -104,11 +106,13 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
             <View key={p.id} style={[styles.seg, { backgroundColor: done.has(p.id) ? c.accent : c.backgroundSelected }]} />
           ))}
         </View>
-        <View style={styles.statsRow}>
-          <Mini value={String(list.length)} label="summits" />
-          <Mini value={String(partners)} label="partners" />
-          <Mini value={String(wants.length)} label="want to climb" />
-        </View>
+        <StatsCard s={climberStats(list, peaks, peakById)} isMe={isMe} />
+        {isMe && (
+          <Pressable onPress={() => router.push('/backfill')} style={styles.addPast}>
+            <Icon name="plus" size={18} color={c.accent} weight={2.2} />
+            <Text style={styles.addPastText}>Add peaks you&apos;ve climbed before</Text>
+          </Pressable>
+        )}
 
         {climbedPeaks.length > 0 && <SectionHeader title={isMe ? 'Your summits' : 'Summits'} action="All peaks" onAction={() => router.push('/peaks')} />}
         {climbedPeaks.length > 0 && (
@@ -176,15 +180,6 @@ export function Passport({ userId, topRight, footer }: { userId: string; topRigh
   );
 }
 
-function Mini({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Text style={{ color: c.text, fontFamily: Type.display, fontSize: 28 }}>{value}</Text>
-      <Text style={{ color: c.textSecondary, fontFamily: Type.body, fontSize: 13 }}>{label}</Text>
-    </View>
-  );
-}
-
 function DiaryRow({ log }: { log: Ascent }) {
   const { peakById, photoFor, user } = useStore();
   const peak = peakById.get(log.peakId);
@@ -195,11 +190,15 @@ function DiaryRow({ log }: { log: Ascent }) {
     <Pressable onPress={() => router.push(`/ascent/${log.id}`)} style={({ pressed }) => [styles.diaryRow, pressed && { opacity: 0.6 }]}>
       <View style={styles.diaryDate}>
         <Text style={styles.diaryMonth}>{m ? MONTHS[Number(m) - 1] : ''}</Text>
-        <Text style={styles.diaryDay}>{d ? Number(d) : '?'}</Text>
+        <Text style={styles.diaryDay}>{d ? Number(d) : '-'}</Text>
       </View>
-      <PeakImage peakId={peak.id} photoId={log.userId === ME ? (log.photoId ?? photoFor.get(peak.id)) : undefined} index={1} width={60} height={60} radius={Radius.sm} />
+      <PeakImage peakId={peak.id} photoId={log.userId === ME ? (log.photoId ?? photoFor.get(peak.id)) : undefined} uri={log.photos?.[0]} index={1} width={60} height={60} radius={Radius.sm} />
       <View style={{ flex: 1, gap: 3 }}>
-        <Text style={styles.diaryName}>{peak.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={styles.diaryName}>{peak.name}</Text>
+          {log.winter ? <Icon name="snow" size={15} color="#3E6A8A" weight={2.2} /> : null}
+        </View>
+        {log.rating ? <Stars value={log.rating} size={13} /> : null}
         <Text style={styles.diaryMeta} numberOfLines={1}>
           {peak.elevationFt.toLocaleString()} ft
           {names.length ? `, with ${names.join(' and ')}` : ''}
@@ -229,6 +228,8 @@ const styles = StyleSheet.create({
   bigLabel: { color: c.textSecondary, fontFamily: Type.body, fontSize: 13 },
   segments: { flexDirection: 'row', gap: 2 },
   seg: { flex: 1, height: 10, borderRadius: 2 },
+  addPast: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingVertical: 6 },
+  addPastText: { color: c.accent, fontFamily: Type.bodyBold, fontSize: 16 },
   statsRow: { flexDirection: 'row', paddingVertical: Spacing.two, marginTop: Spacing.one },
   summitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tileLabel: { color: c.text, fontFamily: Type.bodyMedium, fontSize: 13, marginTop: 5 },

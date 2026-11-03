@@ -7,7 +7,7 @@ import { CO_14ERS } from '@/data/co14ers';
 import { buildDemo } from './social/seed';
 import type { Ascent, Beta, Peak, Plan, User } from './types';
 
-const KEY = 'register:v2';
+const KEY = 'register:v3';
 const LEGACY_KEY = 'bagged:v1';
 export const ME = 'me';
 
@@ -28,7 +28,8 @@ function initialState(): State {
   const d = buildDemo();
   return {
     users: Object.fromEntries([[ME, blankMe], ...d.users.map((u) => [u.id, u])]),
-    following: d.following,
+    // A new climber follows nobody. The app has to be worth it alone; friends make it better.
+    following: [],
     wants: { ...d.wants, [ME]: [] },
     ascents: d.ascents,
     plans: d.plans,
@@ -51,6 +52,12 @@ export type NewAscent = {
   source: Ascent['source'];
   photoId?: string;
   planId?: string;
+  rating?: number;
+  winter?: boolean;
+  photos?: string[];
+  routeId?: string;
+  customMiles?: number;
+  customGainFt?: number;
 };
 
 type Store = State & {
@@ -69,7 +76,12 @@ type Store = State & {
   summitedBy: (userId: string) => Set<string>;
   isFollowing: (userId: string) => boolean;
   wantsOf: (userId: string) => string[];
-  feed: () => FeedItem[];
+  /** Everyone: all public ascents, like Nextdoor. Friends: you and who you follow. */
+  feed: (scope?: 'everyone' | 'friends') => FeedItem[];
+  /** Full name for you and people you follow, first name and last initial for everyone else. */
+  displayName: (userId: string) => string;
+  /** Everyone's ascents of a peak, for the numbers on its page. */
+  peakActivity: (peakId: string) => { climbers: number; ascents: number; winter: number; rating: number | null; ratings: number; lastDate: string | null };
   betaFor: (peakId: string, days?: number) => Ascent[];
   friendsWhoClimbed: (peakId: string) => User[];
   friendsWhoWant: (peakId: string) => User[];
@@ -217,6 +229,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         source: a.source,
         photoId: a.photoId,
         planId: a.planId,
+        rating: a.rating,
+        winter: a.winter ?? isWinter(a.date),
+        photos: a.photos,
+        routeId: a.routeId,
+        customMiles: a.customMiles,
+        customGainFt: a.customGainFt,
         createdAt: now + i,
         kudos: [],
         comments: [],
@@ -231,14 +249,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           withIds: [ME, ...mine.withIds.filter((x) => x !== uid)],
           note: '',
           photoId: undefined,
+          photos: undefined,
+          rating: undefined,
           taggedBy: ME,
           source: a.source === 'plan' ? 'plan' : 'claim',
         });
       }
     }
     setState((s) => {
-      const have = new Set(s.ascents.map((x) => `${x.userId}|${candidateKey(x.peakId, x.date)}`));
-      const fresh = created.filter((x) => !have.has(`${x.userId}|${candidateKey(x.peakId, x.date)}`));
+      // Same peak, same day is a duplicate. Undated repeats are allowed: people did climb some peaks many times.
+      const have = new Set(s.ascents.filter((x) => x.date).map((x) => `${x.userId}|${candidateKey(x.peakId, x.date)}`));
+      const fresh = created.filter((x) => !x.date || !have.has(`${x.userId}|${candidateKey(x.peakId, x.date)}`));
       return { ...s, ascents: [...fresh, ...s.ascents] };
     });
     return created.filter((c) => c.userId === ME);
@@ -346,11 +367,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const circle = new Set([ME, ...state.following]);
     const upcoming = state.plans.filter((p) => !p.done && p.date >= today());
 
-    const feed = (): FeedItem[] => {
+    const isPublic = (uid: string) => uid === ME || (state.users[uid]?.privacy ?? 'public') === 'public';
+    const feed = (scope: 'everyone' | 'friends' = 'everyone'): FeedItem[] => {
       // One card per group climb, preferring the version with a note.
       const groups = new Map<string, Ascent[]>();
       for (const a of state.ascents) {
-        if (!circle.has(a.userId)) continue;
+        if (scope === 'friends' ? !circle.has(a.userId) : !(circle.has(a.userId) || isPublic(a.userId))) continue;
+        // Backfilled history without a date isn't news.
+        if (!a.date && a.source === 'manual' && a.userId === ME && !a.note) continue;
         const key = `${a.peakId}|${a.date}|${[a.userId, ...a.withIds].sort().join(',')}`;
         groups.set(key, [...(groups.get(key) ?? []), a]);
       }
@@ -359,10 +383,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const best = list.find((a) => a.userId === ME) ?? list.find((a) => a.note) ?? list[0];
         const climbers = [best.userId, ...best.withIds].filter((u, i, arr) => arr.indexOf(u) === i);
         items.push({ kind: 'ascent', ascent: best, climbers, at: best.createdAt });
-      }
-      for (const p of upcoming) {
-        const involved = p.memberIds.some((m) => circle.has(m)) || p.hostId === ME;
-        if (involved || (p.visibility === 'public' && p.memberIds.length < p.size)) items.push({ kind: 'plan', plan: p, at: p.createdAt });
       }
       return items.sort((a, b) => b.at - a.at).slice(0, 60);
     };
@@ -384,6 +404,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       isFollowing: (id) => followingSet.has(id),
       wantsOf: (id) => state.wants[id] ?? [],
       feed,
+      displayName: (uid) => {
+        const u = state.users[uid];
+        if (!u) return 'Someone';
+        if (uid === ME) return 'You';
+        if (followingSet.has(uid)) return u.name;
+        const [first, ...rest] = u.name.split(' ');
+        const last = rest.at(-1);
+        return last ? `${first} ${last[0]}.` : first;
+      },
+      peakActivity: (peakId) => {
+        const list = state.ascents.filter((a) => a.peakId === peakId);
+        const rated = list.filter((a) => a.rating);
+        return {
+          climbers: new Set(list.map((a) => a.userId)).size,
+          ascents: list.length,
+          winter: list.filter((a) => a.winter).length,
+          rating: rated.length ? rated.reduce((n, a) => n + (a.rating ?? 0), 0) / rated.length : null,
+          ratings: rated.length,
+          lastDate: list.map((a) => a.date).filter((d): d is string => !!d).sort().at(-1) ?? null,
+        };
+      },
       betaFor: (peakId, days = 45) => {
         const cutoff = Date.now() - days * 86_400_000;
         const seen = new Set<string>();
@@ -446,6 +487,13 @@ export function useStore() {
   const v = useContext(Ctx);
   if (!v) throw new Error('useStore outside StoreProvider');
   return v;
+}
+
+/** Calendar winter: Dec 21 through Mar 20. The date most 14er winter lists go by. */
+export function isWinter(date: string | null | undefined) {
+  if (!date) return false;
+  const [, m, d] = date.split('-').map(Number);
+  return (m === 12 && d >= 21) || m === 1 || m === 2 || (m === 3 && d <= 20);
 }
 
 export function formatDate(date: string | null) {

@@ -25,7 +25,7 @@ export default function YouScreen() {
           <View style={{ gap: 12 }}>
             {demo ? (
               <View style={styles.demo}>
-                <Text style={styles.demoText}>The friends, plans and conditions here are a sample crew until accounts go live.</Text>
+                <Text style={styles.demoText}>The other climbers and their posts are sample data until accounts go live.</Text>
               </View>
             ) : null}
             <Pressable onPress={() => router.push('/credits')} hitSlop={8}>

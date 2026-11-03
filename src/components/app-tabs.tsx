@@ -15,10 +15,6 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Peaks</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="mountain.2.fill" md="landscape" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="plans">
-        <NativeTabs.Trigger.Label>Plans</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="calendar" md="event" />
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="you">
         <NativeTabs.Trigger.Label>You</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="person.crop.circle" md="person" />

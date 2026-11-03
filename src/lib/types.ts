@@ -10,6 +10,16 @@ export type Peak = {
   approx?: boolean;
 };
 
+/** Facts about a peak from public sources. */
+export type PeakStats = {
+  prominenceFt?: number;
+  isolationMi?: number;
+  firstAscent?: string;
+  easiestRoute?: string;
+  location?: string;
+  wiki?: string;
+};
+
 /** A bundled photo of a peak, with the credit its license asks for. */
 export type PeakPhoto = { src: number; author: string; license: string; source: string; w: number; h: number };
 
@@ -49,6 +59,12 @@ export type User = {
   color: string;
   /** Up to four peak ids. */
   favorites: string[];
+  /** So a friend can tag you on a climb before you've joined. Only ever for notifications. */
+  email?: string;
+  /** Finished the first-run "add the peaks you've done" step. */
+  onboarded?: boolean;
+  /** Who sees your ascents. Public shows first name and last initial to everyone. */
+  privacy?: 'public' | 'friends';
 };
 
 /** Conditions report attached to an ascent: the "beta" other people plan around. */
@@ -81,6 +97,16 @@ export type Ascent = {
   photoId?: string;
   kudos: string[];
   comments: Comment[];
+  /** 0.5 to 5 in half steps, like Letterboxd. */
+  rating?: number;
+  /** Calendar winter, Dec 21 to Mar 20: the usual 14er standard. */
+  winter?: boolean;
+  /** Photo uris picked when logging. */
+  photos?: string[];
+  /** From src/data/routes.ts, or 'other' with the climber's own numbers. */
+  routeId?: string;
+  customMiles?: number;
+  customGainFt?: number;
   /** Set when this ascent came from someone else's tag or a group plan. */
   taggedBy?: string;
   planId?: string;

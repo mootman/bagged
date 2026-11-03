@@ -29,6 +29,7 @@ export function pickIndex(key: string, n: number) {
 export function PeakImage({
   peakId,
   photoId,
+  uri: picked,
   index = 0,
   width,
   height,
@@ -38,6 +39,8 @@ export function PeakImage({
 }: {
   peakId: string;
   photoId?: string;
+  /** A photo the climber picked when logging. Wins over everything. */
+  uri?: string;
   index?: number;
   width: number;
   height: number;
@@ -45,7 +48,8 @@ export function PeakImage({
   credit?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const uri = usePhoto(photoId);
+  const roll = usePhoto(photoId);
+  const uri = picked ?? roll;
   const photos = photosFor(peakId);
   const photo = photos.length ? photos[index % photos.length] : undefined;
 
@@ -75,17 +79,20 @@ export function Credit({ photo, style }: { photo: PeakPhoto; style?: StyleProp<V
 }
 
 /** Swipe through every photo of a peak, full width. Dots show where you are. */
-export function PhotoGallery({ peakId, photoId, width, height }: { peakId: string; photoId?: string; width: number; height: number }) {
+export function PhotoGallery({ peakId, photoId, uris = [], onlyMine = false, width, height }: { peakId: string; photoId?: string; uris?: string[]; onlyMine?: boolean; width: number; height: number }) {
   const uri = usePhoto(photoId);
-  const photos = photosFor(peakId);
+  const photos = onlyMine && (uris.length || uri) ? [] : photosFor(peakId);
   const [page, setPage] = useState(0);
-  const count = (uri ? 1 : 0) + photos.length;
+  const count = uris.length + (uri ? 1 : 0) + photos.length;
 
-  if (count <= 1) return <PeakImage peakId={peakId} photoId={photoId} width={width} height={height} credit />;
+  if (count <= 1) return <PeakImage peakId={peakId} photoId={photoId} uri={uris[0]} width={width} height={height} credit />;
 
   return (
     <View style={{ width, height }}>
       <ScrollPager width={width} height={height} onPage={setPage}>
+        {uris.map((u) => (
+          <Image key={u} source={{ uri: u }} style={{ width, height }} contentFit="cover" />
+        ))}
         {uri ? <Image key="mine" source={{ uri }} style={{ width, height }} contentFit="cover" /> : null}
         {photos.map((p, i) => (
           <View key={i} style={{ width, height }}>
